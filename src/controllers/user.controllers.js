@@ -4,15 +4,6 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.models.js"
 import { uploadToCloudinary } from "../utils/cloudinary.js"
 
-/*
-Steps to work on resgitering users
-
-3. 
-4. 
-5. 
-6. 
-
-*/
 
 const registerUser = asyncHandler(async (req, res) => {
     //get user details
