@@ -1,5 +1,6 @@
 import connectDB from './db/index.js';
 import dotenv from 'dotenv'
+import { app } from './app.js';
 
 /*
 documentation way of connecting .env with project file

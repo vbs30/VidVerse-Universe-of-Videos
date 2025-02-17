@@ -24,6 +24,12 @@ app.use(express.urlencoded({
 app.use(express.static("public"))     
  
 //from server, we can access/set all cookies of users(basically performing CRUD operations on cookies of users)
-app.use(cookieParser())     
+app.use(cookieParser()) 
+
+//routes
+import userRouter from "./routes/user.routes.js";
+
+//declaring routes as per production rules, using /api/v1 gives idea about version of api, also this is a good practice in industry level work
+app.use("/api/v1/users", userRouter);
 
 export { app }
