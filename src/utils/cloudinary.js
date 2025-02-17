@@ -9,13 +9,13 @@ cloudinary.config({
 
 const uploadToCloudinary = async (localFilePath) => {
     try {
-        if(!localFilePath) {
+        if (!localFilePath) {
             return null;
         }
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "auto"
         })
-        console.log("File is uploaded successfully", response.url);
+        fs.unlinkSync(localFilePath)
         return response;
     } catch (error) {
         fs.unlinkSync(localFilePath);     //when upload fails, this will remove that file from server so that nothing gets saved unnecessarily
@@ -23,4 +23,4 @@ const uploadToCloudinary = async (localFilePath) => {
     }
 }
 
-export {uploadToCloudinary}
+export { uploadToCloudinary }
