@@ -69,7 +69,7 @@ userSchema.methods.isPasswordCorrect = async function (password) {
 }
 
 
-userSchema.methods.generateAccessToken = async function () {
+userSchema.methods.generateAccessToken = function () {
     return jwt.sign(
         {
             _id: this._id,
@@ -83,7 +83,11 @@ userSchema.methods.generateAccessToken = async function () {
     )
 }
 
-userSchema.methods.generateRefreshToken = async function () {
+/*
+The async keyword was causing the return values to be wrapped in Promises unnecessarily.
+After making these changes, the tokens should be returned as strings directly and will be properly stored in cookies
+*/
+userSchema.methods.generateRefreshToken = function () {
     return jwt.sign(
         {
             _id: this._id,
