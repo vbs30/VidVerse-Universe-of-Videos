@@ -3,6 +3,7 @@ import { ApiError } from "../utils/apiError.js"
 import { ApiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.models.js"
 import { uploadToCloudinary } from "../utils/cloudinary.js"
+import jwt from "jsonwebtoken"
 
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -128,6 +129,40 @@ const logoutUser = asyncHandler(async (req, res) => {
 })
 
 
+const refreshAccessToken = asyncHandler(async (req, res) => {
+    const incomingToken = req.cookies.refreshToken || req.body.refreshToken
+    if (!incomingToken)
+        throw new ApiError(401, "Unauthorized request")
+
+    try {
+        const decodedToken = jwt.verify(incomingToken, process.env.REFRESH_TOKEN_SECRET)
+
+        const user = await User.findById(decodedToken?._id)
+
+        if (!user)
+            throw new ApiError(401, "Invalid refresh token")
+
+        if (incomingToken !== user.refreshToken)
+            throw new ApiError(401, "Refresh token is either expired or used")
+
+        const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+
+        return res.status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options)
+            .json(
+                new ApiResponse(200, { accessToken, refreshToken: refreshToken }, "Access token refreshed sucessfully")
+            )
+    } catch (error) {
+        throw new ApiError(401, error?.message || "Invalid refresh token")
+    }
+})
+
+
 /*
 Generating an access and refresh token so that when user is successfully logged in, both tokens will be stored in cookies and from next time, user is automatically skipping login and based on tokens, he is directly getting logged in
 Also, once login is done, new refresh token is saved in db as well, so if cookie storage gets cleared due to some issue, this db refresh token will also help to automatically logging in the website
@@ -148,4 +183,4 @@ const generateAccessAndRefreshToken = async (userId) => {
     }
 }
 
-export { registerUser, loginUser, logoutUser }
+export { registerUser, loginUser, logoutUser, refreshAccessToken }
