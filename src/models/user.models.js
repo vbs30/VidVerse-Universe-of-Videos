@@ -63,7 +63,7 @@ userSchema.pre("save", async function (next) {
     next();
 })
 
-//will compare password from database and entered at login, return true or false
+//will compare password with stored password in db, return true or false
 userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password);
 }

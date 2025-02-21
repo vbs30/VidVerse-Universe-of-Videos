@@ -5,7 +5,7 @@ import { User } from "../models/user.models.js"
 import { uploadToCloudinary } from "../utils/cloudinary.js"
 import jwt from "jsonwebtoken"
 
-
+//#region Code for Registering Users
 const registerUser = asyncHandler(async (req, res) => {
     //get user details
     const { username, fullName, email, password } = req.body;
@@ -62,8 +62,9 @@ const registerUser = asyncHandler(async (req, res) => {
         new ApiResponse(200, createdUser, "User successfully resgitered")
     )
 })
+//#endregion
 
-
+//#region Code for UserLogin 
 const loginUser = asyncHandler(async (req, res) => {
 
     //get user details
@@ -111,8 +112,9 @@ const loginUser = asyncHandler(async (req, res) => {
             )
         )
 })
+//#endregion
 
-
+//#region Code for User logout
 const logoutUser = asyncHandler(async (req, res) => {
     //To logout, we need to clear (delete) the existing refresh token in db, so that next time, without actual login, you should not access pages directly
     User.findByIdAndUpdate(req.user._id, { $unset: { refreshToken: 1 } }, { new: true })
@@ -127,8 +129,9 @@ const logoutUser = asyncHandler(async (req, res) => {
             new ApiResponse(200, {}, "User Logged Out successfully")
         )
 })
+//#endregion
 
-
+//#region Code for Refreshing Tokens
 const refreshAccessToken = asyncHandler(async (req, res) => {
     //get refresh token either from cookie storage or body, if token is not obtained throw an error
     const incomingToken = req.cookies.refreshToken || req.body.refreshToken
@@ -162,13 +165,98 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         throw new ApiError(401, error?.message || "Invalid refresh token")
     }
 })
+//#endregion
+
+//#region Code for Changing passwords
+const changingPassword = asyncHandler(async (req, res) => {
+    //Get passwords from user
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+
+    //Get user details, if user is logged in, by req.user we will get current user with it's id
+    const user = await User.findById(req.user?._id)
+
+    //check if your current or old password is correct by using isPasswordCorerect() which will compare password with stored password in db, return true or false
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+    //if password does not match, throw error
+    if (!isPasswordCorrect) {
+        throw new ApiError(401, "Password does not match")
+    }
+
+    //also check if user is confirmed that he wants that password
+    if (!(newPassword === confirmPassword)) {
+        throw new ApiError(401, "Password does not match")
+    }
+
+    //once you get new password, save it in db and return a response
+    user.password = confirmPassword
+    await user.save({ validateBeforeSave: false })
+    return res.status(200).json(
+        new ApiResponse(200, "Password changed sucessfully")
+    )
+})
+//#endregion
+
+//#region Code for Getting current User
+const getCurrentUser = asyncHandler(async (req, res) => {
+    return res.status(201).json(
+        new ApiResponse(200, req.user, "Successfully obtained current user")
+    )
+})
+//#endregion
+
+//#region Code for updating Avatar set by users
+const updateUserAvatar = asyncHandler(async (req, res) => {
+    //get new avatar file path given by user and check if file is fetched or not
+    const avatarPath = req.file?.path
+    if (!avatarPath) {
+        throw new ApiError(401, "Avatar file not found")
+    }
+
+    //if avatar file is obtained, upload to cloudinary and get it's url, if url is not obtained, throw an error
+    const avatar = await uploadToCloudinary(avatarPath)
+    if (!avatar.url) {
+        throw new ApiError(401, "Error while uploading avatar to cloudinary")
+    }
+
+    //if avatar url is obtained by coudinary, update the avatar url in db with this url and send response of successful updation
+    const user = User.findByIdAndUpdate(req.user?._id, { $set: { avatar: avatar.url } }, { new: true }).select("-password")
+    return res.status(201).json(
+        new ApiResponse(200, user, "Avatar updated Successfully")
+    )
+})
+//#endregion
+
+//region Code for updating cover image set by users
+const updateUserCoverImage = asyncHandler(async (req, res) => {
+    //get new cover image file path given by user and check if file is fetched or not
+    const coverImagePath = req.file?.path
+    if (!coverImagePath) {
+        throw new ApiError(401, "Cover Image file file not found")
+    }
+
+    //if cover image file is obtained, upload to cloudinary and get it's url, if url is not obtained, throw an error
+    const coverImage = await uploadToCloudinary(coverImagePath)
+    if (!coverImage.url) {
+        throw new ApiError(401, "Error while uploading cover image to cloudinary")
+    }
+
+    //if cover image url is obtained by coudinary, update the cover image url in db with this url and send response of successful updation
+    const user = User.findByIdAndUpdate(req.user?._id, { $set: { coverImage: coverImage.url } }, { new: true }).select("-password")
+    return res.status(201).json(
+        new ApiResponse(200, user, "Cover Image updated Successfully")
+    )
+})
+//#endregion
 
 
-/*
-Generating an access and refresh token so that when user is successfully logged in, both tokens will be stored in cookies and from next time, user is automatically skipping login and based on tokens, he is directly getting logged in
-Also, once login is done, new refresh token is saved in db as well, so if cookie storage gets cleared due to some issue, this db refresh token will also help to automatically logging in the website
-*/
+//#region HELPER FUNCTIONS
+
 const generateAccessAndRefreshToken = async (userId) => {
+
+    //Generating an access and refresh token so that when user is successfully logged in, both tokens will be stored in cookies and from next time, user is automatically skipping login and based on tokens, he is directly getting logged in
+    //Also, once login is done, new refresh token is saved in db as well, so if cookie storage gets cleared due to some issue, this db refresh token will also help to automatically logging in the website
+
     try {
         const user = await User.findById(userId)
         const accessToken = user.generateAccessToken()
@@ -183,5 +271,6 @@ const generateAccessAndRefreshToken = async (userId) => {
         throw new ApiError(500, "Something went wrong while generating Access and Refresh Token")
     }
 }
+//#endregion
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken }
+export { registerUser, loginUser, logoutUser, refreshAccessToken, changingPassword, getCurrentUser, updateUserAvatar, updateUserCoverImage }
