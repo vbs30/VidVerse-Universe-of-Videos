@@ -263,6 +263,84 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 })
 //#endregion
 
+//#region Code for getting count of Subscribers to channel and count of channels which user has subscribed ( Many to Many collection )
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params;
+    if (!username?.trim()) {
+        throw new ApiError(401, "Username is missing")
+    }
+
+    //Basically we will write a aggregate pipeline ( a query ) to get channel details with projected fields.
+    const channel = await User.aggregate([
+        {
+            //Filtered one document out of many, basically matched the current username with db username
+            $match: {
+                username: username?.toLowerCase()
+            }
+        },
+        {
+            //we now basically join users with subscription to get subscribers (joining _id in users with channelSubscribed in subscription)
+            //result is stored in the subscribers array. This array contains all users subscribed to this channel.
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channelSubscribed",
+                as: "subscribers"
+            }
+        },
+        {
+            //also we are joining users with subscription to get channels that the user has subscribed to. (joining _id in users with subscriber in subscription)
+            //result is stored in the subscribedTo array. This array contains all channels that particular user has subscribed to.
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribedTo"
+            }
+        },
+        {
+            //Adding custom fields like count of subscribers, channels and checking whether user has subscribed to channel or not
+            $addFields: {
+                subscribersCount: {
+                    $size: "$subscribers"
+                },
+                channelSubscriptionCount: {
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+                        then: true, 
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            //We choose the final shape of the result — only keeping the fields we care about
+            $project: {
+                username: 1,
+                email: 1,
+                avatar: 1,
+                subscribersCount: 1,
+                channelSubscriptionCount: 1,
+                isSubscribed: 1
+            }
+        }
+    ])
+
+    if(!channel?.length){
+        throw new ApiError(401, "Channel not found")
+    }
+    console.log(channel)
+
+    //if channel exists, you will get user details, subscribersCount, channelSubscriptionCount, where user has subscribed or not (boolean), just send this response
+    return res.status(200, channel[0], "User channel fetched successfully");
+
+
+})
+//#endregion
+
 
 //#region HELPER FUNCTIONS
 
@@ -287,4 +365,14 @@ const generateAccessAndRefreshToken = async (userId) => {
 }
 //#endregion
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken, changingPassword, getCurrentUser, updateUserAvatar, updateUserCoverImage }
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+    changingPassword,
+    getCurrentUser,
+    updateUserAvatar,
+    updateUserCoverImage,
+    getUserChannelProfile
+}
