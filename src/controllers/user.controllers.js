@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js"
 import { ApiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.models.js"
-import { uploadToCloudinary } from "../utils/cloudinary.js"
+import { uploadToCloudinary, deletefromCloudinary } from "../utils/cloudinary.js"
 import jwt from "jsonwebtoken"
 
 //#region Code for Registering Users
@@ -207,6 +207,13 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 //#region Code for updating Avatar set by users
 const updateUserAvatar = asyncHandler(async (req, res) => {
+    //get avatar url from db and delete it from cloudinary, so that cloudinary will only hold new or current images not history
+    const oldAvatar = await User.find(req.user?.avatar);
+    const isDeleted = await deletefromCloudinary(oldAvatar);
+    if (!isDeleted) {
+        throw new ApiError(401, "Old Avatar file not deleted, Cannot further upload a new one");
+    }
+
     //get new avatar file path given by user and check if file is fetched or not
     const avatarPath = req.file?.path
     if (!avatarPath) {
@@ -229,6 +236,13 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
 //region Code for updating cover image set by users
 const updateUserCoverImage = asyncHandler(async (req, res) => {
+    //get coverImage url from db and delete it from cloudinary, so that cloudinary will only hold new or current images not history
+    const oldcoverImage = await User.find(req.user?.coverImage);
+    const isDeleted = await deletefromCloudinary(oldcoverImage);
+    if (!isDeleted) {
+        throw new ApiError(401, "Old Cover Image file not deleted, Cannot further upload a new one");
+    }
+
     //get new cover image file path given by user and check if file is fetched or not
     const coverImagePath = req.file?.path
     if (!coverImagePath) {
