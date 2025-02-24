@@ -5,12 +5,46 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.models.js"
 import { Subscription } from "../models/subscription.models.js";
 
-
+//#region Code for Toggling Subscribe to Unsubscribe and vice versa
 const toggleSubscription = asyncHandler(async (req, res) => {
+    //We want the user to subscribe or unsubscribe a channel, to toggle between subscribe and unsubscribe
+    //Get subscriberId as a person who will subscribe to the channel and channelId
     const { channelId } = req.params
+    const subscriberId = req.user._id
+
+
+    //check if channel id is valid or not, meaning there is a channel by this id or not
+    if (!isValidObjectId(channelId)) {
+        throw new ApiError(401, "Invalid channel, check it's ID")
+    }
+
+    //if channel present, then compare both ids as user cannot subscribe his own channel
+    if (subscriberId.toString() === channelId.toString()) {
+        throw new ApiError(401, "User cannot subscribe to himself or his own channel")
+    }
+
+    //now, once we know that subscriber and channel have different ids, we can check whether they have already subscribed or not
+    //we will do this by finding whether a document exists with subscriberId and channelId that we have
+    const doSubscriptionExist = await Subscription.findOne({ subscriber: subscriberId, channelSubscribed: channelId })
+
+    //if Document exists, then just delete this document, this will indicate that subscription is deleted, user has unsubscribed to the channel
+    if (doSubscriptionExist) {
+        await Subscription.findByIdAndDelete(doSubscriptionExist._id)
+        return res.status(201).json(
+            new ApiResponse(200, "Unsubscribed Successfully")
+        )
+    }
+
+    //if Document does not exist, then create a document with this subscriberId and channelId, this will indicate that user has subscribed to the channel
+    await Subscription.create({ subscriber: subscriberId, channelSubscribed: channelId })
+    return res.status(201).json(
+        new ApiResponse(200, "Subscribed Successfully")
+    )
+
 })
+//#endregion
 
-
+//#region Code to get count of subscribers of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     //getting count of subscribers a channel has
     //first of all we will get the channel name (user's channel name) as input to search and return count of subscribers of that channel
@@ -36,6 +70,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
             }
         },
         {
+            //now we will make a new variable or add a field which will count the subscribers and store the value in this new field
             $addFields: {
                 subscribersCount: {
                     $size: "$subscribers"
@@ -43,6 +78,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
             }
         },
         {
+            //we will project or return the fields which we want to display or see as results
             $project: {
                 subscribersCount: 1
             }
@@ -54,8 +90,9 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         new ApiResponse(200, countOfSubscribers, "Successfully fetched count of subscribers")
     )
 })
+//#endregion
 
-
+//#region Code for getting how many channels and which channels has user subscribed to
 const getSubscribedChannels = asyncHandler(async (req, res) => {
     //getting count of how many channels has user subscribed
     const { username } = req.params
@@ -65,11 +102,13 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
 
     const channelSubscriptionCount = await User.aggregate([
         {
+            //We will match the searched or given username with the one in database, if username is present then further work
             $match: {
                 username: username?.toLowerCase()
             }
         },
         {
+            // we will join Users with Subscription by Users._id = Subscription.channelSubscribed
             $lookup: {
                 from: "Subscription",
                 localField: "_id",
@@ -78,6 +117,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
             }
         },
         {
+            //now we will make a new variable or add a field which will count of channels user has subscribed to and store the value in this new field
             $addFields: {
                 countofChannels: {
                     $size: "$subscribedTo"
@@ -85,8 +125,10 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
             }
         },
         {
+            //we will project or return the fields which we want to display or see as results
             $project: {
-                subscribedTo: 1
+                subscribedTo: 1,
+                username: 1
             }
         }
     ])
@@ -96,5 +138,6 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
         new ApiResponse(200, channelSubscriptionCount, "Successfully fetched count of channels user has subscribed to")
     )
 })
+//#endregion
 
 export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels }
