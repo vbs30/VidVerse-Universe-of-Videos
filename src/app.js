@@ -28,8 +28,10 @@ app.use(cookieParser())
 
 //routes
 import userRouter from "./routes/user.routes.js";
+import subscriptionRouter from "./routes/subscription.routes.js"
 
 //declaring routes as per production rules, using /api/v1 gives idea about version of api, also this is a good practice in industry level work
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/subscription", subscriptionRouter)
 
 export { app }

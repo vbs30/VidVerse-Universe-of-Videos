@@ -343,7 +343,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     if (!channel?.length) {
         throw new ApiError(401, "Channel not found")
     }
-    console.log(channel)
 
     //if channel exists, you will get user details, subscribersCount, channelSubscriptionCount, where user has subscribed or not (boolean), just send this response
     return res.status(201).json(
