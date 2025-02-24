@@ -23,21 +23,20 @@ const uploadToCloudinary = async (localFilePath) => {
     }
 }
 
-const deletefromCloudinary = async (localFilePath) => {
+const deletefromCloudinary = async (publicId) => {
     try {
-        if(!localFilePath){
+        if (!publicId) {
             return null;
         }
-        const response = await cloudinary.uploader
-        .destroy(localFilePath)
-        .then(({result}) => {
-            if(result === 'ok'){
-                return true;
-            }
-            else{
-                return false;
-            }
-        })
+        const response = await cloudinary.uploader.destroy(publicId)
+            .then(({ result }) => {
+                if (result === 'ok') {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            })
         return response;
     } catch (error) {
         return null;

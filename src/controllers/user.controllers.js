@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.models.js"
 import { uploadToCloudinary, deletefromCloudinary } from "../utils/cloudinary.js"
 import jwt from "jsonwebtoken"
+import mongoose from "mongoose";
 
 //#region Code for Registering Users
 const registerUser = asyncHandler(async (req, res) => {
@@ -126,7 +127,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     //when returning, if cookies are cleared as well as db refresh token is cleared, then we can say that logged out is successful
     return res.status(201).clearCookie("accessToken", options).clearCookie("refreshToken", options)
         .json(
-            new ApiResponse(200, {}, "User Logged Out successfully")
+            new ApiResponse(200, "User Logged Out successfully")
         )
 })
 //#endregion
@@ -180,12 +181,12 @@ const changingPassword = asyncHandler(async (req, res) => {
 
     //if password does not match, throw error
     if (!isPasswordCorrect) {
-        throw new ApiError(401, "Password does not match")
+        throw new ApiError(401, "Your old Password does not match")
     }
 
     //also check if user is confirmed that he wants that password
     if (!(newPassword === confirmPassword)) {
-        throw new ApiError(401, "Password does not match")
+        throw new ApiError(401, "Please enter the new password correctly to confirm")
     }
 
     //once you get new password, save it in db and return a response
@@ -207,11 +208,16 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 
 //#region Code for updating Avatar set by users
 const updateUserAvatar = asyncHandler(async (req, res) => {
-    //get avatar url from db and delete it from cloudinary, so that cloudinary will only hold new or current images not history
-    const oldAvatar = await User.find(req.user?.avatar);
-    const isDeleted = await deletefromCloudinary(oldAvatar);
-    if (!isDeleted) {
-        throw new ApiError(401, "Old Avatar file not deleted, Cannot further upload a new one");
+    // //get user details with avatar url from db and delete it from cloudinary, so that cloudinary will only hold new or current images not history
+    const user = await User.findById(req.user._id)
+    if (!user) {
+        throw new ApiError(401, "User not logged in or not found")
+    }
+
+    if (user.avatar) {
+        const publicId = user.avatar.split("/").pop().split(".")[0]; // Extract Cloudinary public_id
+        const isOldFileDeleted = await deletefromCloudinary(publicId) // Delete old avatar from Cloudinary
+        console.log(isOldFileDeleted)
     }
 
     //get new avatar file path given by user and check if file is fetched or not
@@ -227,9 +233,9 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     }
 
     //if avatar url is obtained by coudinary, update the avatar url in db with this url and send response of successful updation
-    const user = User.findByIdAndUpdate(req.user?._id, { $set: { avatar: avatar.url } }, { new: true }).select("-password")
+    const userAvatarDoc = await User.findByIdAndUpdate(req.user?._id, { $set: { avatar: avatar.url } }, { new: true }).select("-password")
     return res.status(201).json(
-        new ApiResponse(200, user, "Avatar updated Successfully")
+        new ApiResponse(200, userAvatarDoc, "Avatar updated Successfully")
     )
 })
 //#endregion
@@ -237,10 +243,15 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 //region Code for updating cover image set by users
 const updateUserCoverImage = asyncHandler(async (req, res) => {
     //get coverImage url from db and delete it from cloudinary, so that cloudinary will only hold new or current images not history
-    const oldcoverImage = await User.find(req.user?.coverImage);
-    const isDeleted = await deletefromCloudinary(oldcoverImage);
-    if (!isDeleted) {
-        throw new ApiError(401, "Old Cover Image file not deleted, Cannot further upload a new one");
+    const user = await User.findById(req.user._id)
+    if (!user) {
+        throw new ApiError(401, "User not logged in or not found")
+    }
+
+    if (user.coverImage) {
+        const publicId = user.coverImage.split("/").pop().split(".")[0]; // Extract Cloudinary public_id
+        const isOldFileDeleted = await deletefromCloudinary(publicId) // Delete old avatar from Cloudinary
+        console.log(isOldFileDeleted)
     }
 
     //get new cover image file path given by user and check if file is fetched or not
@@ -256,9 +267,9 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     }
 
     //if cover image url is obtained by coudinary, update the cover image url in db with this url and send response of successful updation
-    const user = User.findByIdAndUpdate(req.user?._id, { $set: { coverImage: coverImage.url } }, { new: true }).select("-password")
+    const userCoverImageDoc = await User.findByIdAndUpdate(req.user?._id, { $set: { coverImage: coverImage.url } }, { new: true }).select("-password")
     return res.status(201).json(
-        new ApiResponse(200, user, "Cover Image updated Successfully")
+        new ApiResponse(200, userCoverImageDoc, "Cover Image updated Successfully")
     )
 })
 //#endregion
@@ -309,8 +320,8 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
                 },
                 isSubscribed: {
                     $cond: {
-                        if: {$in: [req.user?._id, "$subscribers.subscriber"]},
-                        then: true, 
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+                        then: true,
                         else: false
                     }
                 }
@@ -329,21 +340,81 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         }
     ])
 
-    if(!channel?.length){
+    if (!channel?.length) {
         throw new ApiError(401, "Channel not found")
     }
     console.log(channel)
 
     //if channel exists, you will get user details, subscribersCount, channelSubscriptionCount, where user has subscribed or not (boolean), just send this response
-    return res.status(200, channel[0], "User channel fetched successfully");
-
-
+    return res.status(201, channel[0], "User channel fetched successfully").json(
+        new ApiResponse(200, channel[0], "User channel fetched successfully")
+    )
 })
 //#endregion
 
+//#region Get Watch History for user
+const getWatchHistory = asyncHandler(async (req, res) => {
+    //Basically we will write a aggregate pipeline ( a query ) to get watch history.
+    //First step is we will match the id with current user (re.user?._id actually gives a string value, so to convert and get id we have taken the id in the form of ObjectID)
+    //Second step now is to find watch history, we have written a sub pipeline to get the results
+    /*
+        basically we are getting what user has watched, how it will work is once user watches a video, in watch history the video details must be saved as an array
+        when video details are saved, it comes with a Owner field where owner of the video also is saved, this owner comes from users model only,
+        so in sub pipeline we are getting the details of that user who has published this video, and in main pipeline, when we get video information with it's owner,
+        it gets saved in array of watch history, basically array of videos user has watched.
+    */
+    //Main lookup where we are getting video details which will be saved in array of watchHistory
+    //sub lookup or sub pipeline where we are getting details of the owner of that video which is going to be saved in that array of watchHistory
+    //we are just getting owner's name and his avatar to be saved with video information
+    const user = await User.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first: "$owner"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+
+    return res.status(200).json(
+        new ApiResponse(200, user[0].watchHistory, "Watch History has been obtained")
+    )
+})
+//#endregion
 
 //#region HELPER FUNCTIONS
-
 const generateAccessAndRefreshToken = async (userId) => {
 
     //Generating an access and refresh token so that when user is successfully logged in, both tokens will be stored in cookies and from next time, user is automatically skipping login and based on tokens, he is directly getting logged in
@@ -374,5 +445,6 @@ export {
     getCurrentUser,
     updateUserAvatar,
     updateUserCoverImage,
-    getUserChannelProfile
+    getUserChannelProfile,
+    getWatchHistory
 }
