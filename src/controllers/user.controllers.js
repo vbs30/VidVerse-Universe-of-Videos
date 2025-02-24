@@ -346,7 +346,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     console.log(channel)
 
     //if channel exists, you will get user details, subscribersCount, channelSubscriptionCount, where user has subscribed or not (boolean), just send this response
-    return res.status(201, channel[0], "User channel fetched successfully").json(
+    return res.status(201).json(
         new ApiResponse(200, channel[0], "User channel fetched successfully")
     )
 })
