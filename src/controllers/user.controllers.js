@@ -355,24 +355,22 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 //#region Get Watch History for user
 const getWatchHistory = asyncHandler(async (req, res) => {
     //Basically we will write a aggregate pipeline ( a query ) to get watch history.
-    //First step is we will match the id with current user (re.user?._id actually gives a string value, so to convert and get id we have taken the id in the form of ObjectID)
-    //Second step now is to find watch history, we have written a sub pipeline to get the results
     /*
-        basically we are getting what user has watched, how it will work is once user watches a video, in watch history the video details must be saved as an array
-        when video details are saved, it comes with a Owner field where owner of the video also is saved, this owner comes from users model only,
-        so in sub pipeline we are getting the details of that user who has published this video, and in main pipeline, when we get video information with it's owner,
-        it gets saved in array of watch history, basically array of videos user has watched.
+    basically we are getting what user has watched, how it will work is once user watches a video, in watch history the video details must be saved as an array
+    when video details are saved, it comes with a Owner field where owner of the video also is saved, this owner comes from users model only,
+    so in sub pipeline we are getting the details of that user who has published this video, and in main pipeline, when we get video information with it's owner,
+    it gets saved in array of watch history, basically array of videos user has watched.
     */
-    //Main lookup where we are getting video details which will be saved in array of watchHistory
-    //sub lookup or sub pipeline where we are getting details of the owner of that video which is going to be saved in that array of watchHistory
-    //we are just getting owner's name and his avatar to be saved with video information
-    const user = await User.aggregate([
-        {
+   const user = await User.aggregate([
+       {
+           //First step is we will match the id with current user (re.user?._id actually gives a string value, so to convert and get id we have taken the id in the form of ObjectID)
             $match: {
                 _id: new mongoose.Types.ObjectId(req.user._id)
             }
         },
         {
+            //Second step now is to find watch history, we have written a sub pipeline to get the results
+            //Main lookup where we are getting video details which will be saved in array of watchHistory
             $lookup: {
                 from: "videos",
                 localField: "watchHistory",
@@ -380,12 +378,14 @@ const getWatchHistory = asyncHandler(async (req, res) => {
                 as: "watchHistory",
                 pipeline: [
                     {
+                        //sub lookup or sub pipeline where we are getting details of the owner of that video which is going to be saved in that array of watchHistory
                         $lookup: {
                             from: "users",
                             localField: "owner",
                             foreignField: "_id",
                             as: "owner",
                             pipeline: [
+                                //we are just getting owner's name and his avatar to be saved with video information
                                 {
                                     $project: {
                                         fullName: 1,
