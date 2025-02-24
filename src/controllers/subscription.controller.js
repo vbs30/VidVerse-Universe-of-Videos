@@ -102,33 +102,52 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
 
     const channelSubscriptionCount = await User.aggregate([
         {
-            //We will match the searched or given username with the one in database, if username is present then further work
+            // Match the searched or given username with the one in the database
             $match: {
                 username: username?.toLowerCase()
             }
         },
         {
-            // we will join Users with Subscription by Users._id = Subscription.channelSubscribed
+            // Join Users with Subscription by Users._id = Subscription.subscriber
             $lookup: {
-                from: "Subscription",
-                localField: "_id",
-                foreignField: "subscriber",
-                as: "subscribedTo"
+                from: "subscriptions", // Collection name
+                localField: "_id", // User's _id
+                foreignField: "subscriber", // Field in Subscription collection referring to user's _id
+                as: "subscribedTo" // Alias for joined data
             }
         },
         {
-            //now we will make a new variable or add a field which will count of channels user has subscribed to and store the value in this new field
-            $addFields: {
-                countofChannels: {
-                    $size: "$subscribedTo"
-                }
+            // Flatten the array to access channelSubscribed field directly
+            $unwind: "$subscribedTo"
+        },
+        {
+            // Join Subscription.channelSubscribed with Users collection to get channel details
+            $lookup: {
+                from: "users", // Collection of channels/users
+                localField: "subscribedTo.channelSubscribed", // Channel's _id from Subscription
+                foreignField: "_id", // Matching field in Users collection
+                as: "channelDetails" // Alias for joined data
             }
         },
         {
-            //we will project or return the fields which we want to display or see as results
+            // Flatten the array to access channelDetails directly
+            $unwind: "$channelDetails"
+        },
+        {
+            // Group the results by user to get count and list of channel usernames
+            $group: {
+                _id: "$_id", // Grouping by user's _id
+                username: { $first: "$username" }, // Keep the user's username
+                countofChannels: { $sum: 1 }, // Count the number of channels subscribed
+                channels: { $push: "$channelDetails.username" } // Collect channel usernames
+            }
+        },
+        {
+            // Project only the required fields in the output
             $project: {
-                subscribedTo: 1,
-                username: 1
+                username: 1,
+                countofChannels: 1,
+                channels: 1 // List of channels user has subscribed to
             }
         }
     ])
