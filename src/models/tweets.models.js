@@ -6,7 +6,12 @@ const tweetsSchema = new mongoose.Schema({
         required: true
     },
 
-    owner: {
+    ownerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+    },
+
+    ownerName: {
         type: mongoose.Schema.Types.String,
         ref: "User",
     },
