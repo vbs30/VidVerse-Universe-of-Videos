@@ -59,17 +59,23 @@ const updateTweet = asyncHandler(async (req, res) => {
     const { tweetId } = req.params
     const { content } = req.body
 
+    //check if given tweetId is correct or not
+    if(!isValidObjectId(tweetId)){
+        throw new ApiError(401, "Specified wrong tweet-id")
+    }
+    
     //If new content is not obtained, throw an error
     if (!content) {
         throw new ApiError(401, "Please enter content to update")
     }
 
-    //now with the help of tweetId, find the document from db and update it
-    const newTweet = await Tweet.findByIdAndUpdate(tweetId, { $set: { content: content } }, { new: true })
+    //we will find the document and check whether that particular tweet is made by current user or not, as user can only modify his created tweets
+    //in same query, if we get current user's id as ownerId, then only we will update the content
+    const newTweet = await Tweet.findOneAndUpdate({_id: tweetId, ownerId: req.user._id}, { $set: { content: content } }, { new: true })
 
     //Check if content is updated
     if (!newTweet) {
-        throw new ApiError(401, "Tweet was not updated, there will be some technical issue")
+        throw new ApiError(401, "Tweet was not updated, either there is no such tweet or you are not the creator of it or there is some technical issue")
     }
 
     //return a response if tweet is updated
@@ -84,12 +90,18 @@ const deleteTweet = asyncHandler(async (req, res) => {
     //get tweet id as to delete any tweet document, you would need it's id
     const { tweetId } = req.params
 
+    //check if given tweetId is correct or not
+    if(!isValidObjectId(tweetId)){
+        throw new ApiError(401, "Specified wrong tweet-id")
+    }
+
+    //we wil check whether current user who wish to delete a tweet is actually it's creater (owner) in same query
     //now with the help of tweetId, find the document from db and delete it
-    const newTweet = await Tweet.findByIdAndDelete(tweetId)
+    const newTweet = await Tweet.findOneAndDelete({_id: tweetId, ownerId: req.user._id})
 
     //Check if content is deleted
     if (!newTweet) {
-        throw new ApiError(401, "Tweet was not deleted, there will be some technical issue")
+        throw new ApiError(401, "Tweet was not deleted, either there is no such tweet or you are not the creator of it or there is some technical issue")
     }
 
     //return a response if tweet is deleted
@@ -103,7 +115,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
 const getAllTweets = asyncHandler(async (req, res) => {
     const tweets = await Tweet.find({})
 
-    if(!tweets){
+    if (!tweets) {
         throw new ApiError(401, "Something went wrong while fetching all the tweets")
     }
 
