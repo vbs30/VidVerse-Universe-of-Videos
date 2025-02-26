@@ -112,9 +112,7 @@ const updateVideoDetails = asyncHandler(async (req, res) => {
     //if thumbnail is given by user, then first delete the thumbnail from cloudinary, upload new one and get it's url to be saved in db
     if (thumbnail) {
         let publicId = videoDetails.thumbnail.split("/").pop().split(".")[0]; // Extract Cloudinary public_id
-        console.log(publicId)
         const isOldFileDeleted = await deletefromCloudinary(publicId) // Delete that url file from cloudinary
-        console.log("isOldFileDeleted: ", isOldFileDeleted)
 
         const updatedThumbnailToCloudinary = await uploadToCloudinary(thumbnail)
         if (!updatedThumbnailToCloudinary) {
@@ -127,11 +125,7 @@ const updateVideoDetails = asyncHandler(async (req, res) => {
     //if video is given by user, then first delete the video from cloudinary, upload new one and get it's url to be saved in db
     if (videoFile) {
         let publicId = videoDetails.videoFile.split("/").pop().split(".")[0]; // Extract Cloudinary public_id
-        console.log(publicId)
         const isOldFileDeleted = await deleteVideoFromCloudinary(publicId) // Delete that url file from cloudinary
-
-        //TODO: Old file is not getting deleted, check why this is happening
-        console.log("isOldFileDeleted: ", isOldFileDeleted)
 
         const updatedVideoToCloudinary = await uploadToCloudinary(videoFile)
         if (!updatedVideoToCloudinary) {
