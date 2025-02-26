@@ -157,24 +157,29 @@ const updateVideoDetails = asyncHandler(async (req, res) => {
 const deleteVideo = asyncHandler(async (req, res) => {
     //get video id by url parameter
     const { videoId } = req.params
+    const videoDetails = await Video.findById(videoId)
 
     if (!isValidObjectId(videoId)) {
         throw new ApiError(401, "Please enter correct video Id")
     }
 
+    //delete the video from cloudinary also
+    let publicId = videoDetails.videoFile.split("/").pop().split(".")[0]; // Extract Cloudinary public_id
+    const isOldFileDeleted = await deleteVideoFromCloudinary(publicId) // Delete that url file from cloudinary
+
     //for deleting a video, you need to delete the db document as well as the video file in cloudinary
-    const videoDetails = await Video.findOneAndDelete({ _id: videoId, ownerId: req.user?._id })
-    console.log(videoDetails);
+    const deletedVideo = await Video.findOneAndDelete({ _id: videoId, ownerId: req.user?._id })
+    console.log(deletedVideo);
 
 
     //if we don't get any video details, send an error
-    if (!videoDetails) {
+    if (!deletedVideo) {
         throw new ApiError(401, "Either the video was not created by you or something went wrong while deleting it")
     }
 
     //if Video details are fetched, delete operation is sucessful, so send a response
     return res.status(201).json(
-        new ApiResponse(200, videoDetails.videoFile, "Video deleted successfully")
+        new ApiResponse(200, deletedVideo.videoFile, "Video deleted successfully")
     )
 
 })
