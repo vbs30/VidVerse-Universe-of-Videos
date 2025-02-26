@@ -43,4 +43,24 @@ const deletefromCloudinary = async (publicId) => {
     }
 }
 
-export { uploadToCloudinary, deletefromCloudinary }
+//made this method, to only lock the resource_type as video
+const deleteVideoFromCloudinary = async (publicId) => {
+    try {
+        if (!publicId) {
+            return null;
+        }
+        const response = await cloudinary.uploader.destroy(publicId, { resource_type: "video" })
+            .then(({ result }) => {
+                if (result === 'ok') {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            })
+        return response;
+    } catch (error) {
+        return null;
+    }
+}
+export { uploadToCloudinary, deletefromCloudinary, deleteVideoFromCloudinary }

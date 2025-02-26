@@ -217,7 +217,6 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     if (user.avatar) {
         const publicId = user.avatar.split("/").pop().split(".")[0]; // Extract Cloudinary public_id
         const isOldFileDeleted = await deletefromCloudinary(publicId) // Delete old avatar from Cloudinary
-        console.log(isOldFileDeleted)
     }
 
     //get new avatar file path given by user and check if file is fetched or not
@@ -251,7 +250,6 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     if (user.coverImage) {
         const publicId = user.coverImage.split("/").pop().split(".")[0]; // Extract Cloudinary public_id
         const isOldFileDeleted = await deletefromCloudinary(publicId) // Delete old avatar from Cloudinary
-        console.log(isOldFileDeleted)
     }
 
     //get new cover image file path given by user and check if file is fetched or not

@@ -28,21 +28,26 @@ const videoSchema = new mongoose.Schema({
     },
 
     views: {
-        tyoe: Number,
+        type: Number,
         default: 0,
     },
 
-    isPublished: {
-        type: Boolean,
-        default: true,
+    // isPublished: {
+    //     type: Boolean,
+    //     default: true,
+    // },
+
+    ownerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
     },
 
-    owner: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User", 
-    },
-}, {timestamps: true});
+    ownerName: {
+        type: mongoose.Schema.Types.String,
+        ref: "User",
+    }
+}, { timestamps: true });
 
 videoSchema.plugin(mongooseAggregatePaginate)
 
-const Video = mongoose.model("Video", videoSchema);
+export const Video = mongoose.model("Video", videoSchema);
