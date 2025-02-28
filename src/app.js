@@ -32,6 +32,7 @@ import subscriptionRouter from "./routes/subscription.routes.js"
 import tweetRouter from "./routes/tweet.routes.js"
 import videoRouter from "./routes/video.routes.js"
 import playlistRouter from "./routes/playlist.routes.js"
+import commentRouter from "./routes/comment.routes.js"
 
 //declaring routes as per production rules, using /api/v1 gives idea about version of api, also this is a good practice in industry level work
 app.use("/api/v1/users", userRouter);
@@ -39,5 +40,6 @@ app.use("/api/v1/subscription", subscriptionRouter)
 app.use("/api/v1/tweets", tweetRouter)
 app.use("/api/v1/videos", videoRouter)
 app.use("/api/v1/playlist", playlistRouter)
+app.use("/api/v1/comments", commentRouter)
 
 export { app }

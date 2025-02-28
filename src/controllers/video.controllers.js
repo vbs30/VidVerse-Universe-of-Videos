@@ -85,6 +85,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 //#endregion
 
 //#region Code for getting videos based on user (all videos created by user)
+//TODO: Get all videos but use pagination for it, like page: 1, limit: 10 videos
 const getVideoByUserId = asyncHandler(async (req, res) => {
     //get current user's id
     const userId = req.user?._id
