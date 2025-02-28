@@ -84,6 +84,26 @@ const getVideoById = asyncHandler(async (req, res) => {
 })
 //#endregion
 
+//#region Code for getting videos based on user (all videos created by user)
+const getVideoByUserId = asyncHandler(async (req, res) => {
+    //get current user's id
+    const userId = req.user?._id
+
+    //get all videos based on user id, meaning all videos created by particular user
+    const videos = await Video.find({ownerId: userId})
+
+    //check if we have got videos or not
+    if (!videos) {
+        throw new ApiError(401, "Videos not obtained, either there are no videos created by user, or something went wrong while fetching it")
+    }
+
+    //return successful response if we get videos
+    return res.status(201).json(
+        new ApiResponse(200, videos, `Videos for userId: ${userId} fetched successfully`)
+    )
+})
+//#endregion
+
 //#region Code for updating particular video file
 const updateVideoDetails = asyncHandler(async (req, res) => {
     //need to update title, description, thumbnail, video file
@@ -169,7 +189,6 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     //for deleting a video, you need to delete the db document as well as the video file in cloudinary
     const deletedVideo = await Video.findOneAndDelete({ _id: videoId, ownerId: req.user?._id })
-    console.log(deletedVideo);
 
 
     //if we don't get any video details, send an error
@@ -186,4 +205,4 @@ const deleteVideo = asyncHandler(async (req, res) => {
 //#endregion
 
 
-export { createVideo, getVideoById, deleteVideo, updateVideoDetails }
+export { createVideo, getVideoById, getVideoByUserId, deleteVideo, updateVideoDetails }
