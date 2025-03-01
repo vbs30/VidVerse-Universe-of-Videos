@@ -7,6 +7,8 @@ import { User } from "../models/user.models.js";
 
 //TODO: get all comments and use pagination like page: 1, limit: 20 comments
 
+
+//#region Code for Adding new Comment
 const addComment = asyncHandler(async (req, res) => {
     //get video by id
     const { videoId } = req.params
@@ -40,7 +42,9 @@ const addComment = asyncHandler(async (req, res) => {
         new ApiResponse(200, newComment, "Comment created successfully")
     )
 })
+//#endregion
 
+//#region Code for updating a comment
 const updateComment = asyncHandler(async (req, res) => {
     const { commentId } = req.params
     const { content } = req.body
@@ -71,8 +75,9 @@ const updateComment = asyncHandler(async (req, res) => {
         new ApiResponse(200, updateComment, "Comment updated successfully")
     )
 })
+//#endregion
 
-
+//#region Code for deleting a comment
 const deleteComment = asyncHandler(async (req, res) => {
     const { commentId } = req.params
     const userId = req.user?._id
@@ -100,5 +105,6 @@ const deleteComment = asyncHandler(async (req, res) => {
         new ApiResponse(200, deletedComment, "Comment deleted successfully")
     )
 })
+//#endregion
 
 export { addComment, updateComment, deleteComment }
