@@ -5,8 +5,43 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { Comment } from "../models/comments.models.js";
 import { User } from "../models/user.models.js";
 
-//TODO: get all comments and use pagination like page: 1, limit: 20 comments
+//#region Code to get all comments that are present below a video from Comment collection
+const getVideoComments = asyncHandler(async (req, res) => {
+    // Get page and limit from query parameters, defaulting to page 1 and limit 10 if not provided
+    const { videoId } = req.params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 2;
 
+    // Options for pagination: current page, limit of documents per page, and sorting by title in ascending order
+    const options = {
+        page: page,
+        limit: limit,
+        sort: { title: 1 },
+    };
+
+    // Create an empty aggregate pipeline to fetch all comments for a video
+    const aggregate = Comment.aggregate([
+        {
+            $match: {
+                video: new mongoose.Types.ObjectId(videoId)
+            }
+        }
+    ]);
+
+    // Fetch paginated videos using the aggregate pipeline and options
+    const comments = await Comment.aggregatePaginate(aggregate, options);
+
+    // Check if videos were found, if not, throw an error
+    if (!comments.docs || comments.docs.length === 0) {
+        throw new ApiError(404, "No comments found or an error occurred while fetching.");
+    }
+
+    // Return successful response with the fetched videos
+    return res.status(200).json(
+        new ApiResponse(200, comments, "All comments fetched successfully")
+    );
+});
+//#endregion
 
 //#region Code for Adding new Comment
 const addComment = asyncHandler(async (req, res) => {
@@ -107,4 +142,4 @@ const deleteComment = asyncHandler(async (req, res) => {
 })
 //#endregion
 
-export { addComment, updateComment, deleteComment }
+export { getVideoComments, addComment, updateComment, deleteComment }
