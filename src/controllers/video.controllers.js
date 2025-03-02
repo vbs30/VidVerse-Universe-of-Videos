@@ -86,22 +86,37 @@ const getVideoById = asyncHandler(async (req, res) => {
 
 //#region Code for getting videos based on user (all videos created by user)
 const getVideoByUserId = asyncHandler(async (req, res) => {
-    //get current user's id
-    const userId = req.user?._id
+    try {
+        // Get current user's id
+        const userId = new mongoose.Types.ObjectId(req.user?._id);
 
-    //get all videos based on user id, meaning all videos created by particular user
-    const videos = await Video.find({ownerId: userId})
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
 
-    //check if we have got videos or not
-    if (!videos) {
-        throw new ApiError(401, "Videos not obtained, either there are no videos created by user, or something went wrong while fetching it")
+        // Get videos by userId with pagination and sorting
+        const videos = await Video.find({ ownerId: userId })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        // Check if videos exist
+        if (!videos.length) {
+            throw new ApiError(404, "No videos found for this user");
+        }
+
+        // Get total video count for pagination info
+        const totalVideos = await Video.countDocuments({ ownerId: userId });
+
+        // Return successful response
+        return res.status(200).json(
+            new ApiResponse(200, { videos, totalVideos }, `Videos for userId: ${userId} fetched successfully`)
+        );
+    } catch (error) {
+        console.error("Error fetching videos:", error);
+        res.status(500).json(new ApiError(500, "An error occurred while fetching videos"));
     }
-
-    //return successful response if we get videos
-    return res.status(201).json(
-        new ApiResponse(200, videos, `Videos for userId: ${userId} fetched successfully`)
-    )
-})
+});
 //#endregion
 
 //#region Code for updating particular video file
@@ -214,7 +229,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     const options = {
         page: page,
         limit: limit,
-        sort: { title: 1 },
+        sort: { createdAt: -1 },
     };
 
     // Create an empty aggregate pipeline to fetch all videos without filtering
