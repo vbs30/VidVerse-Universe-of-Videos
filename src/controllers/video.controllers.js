@@ -2,16 +2,16 @@ import mongoose, { isValidObjectId } from "mongoose"
 import { ApiError } from "../utils/apiError.js"
 import { ApiResponse } from "../utils/apiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
-import { User } from "../models/user.models.js"
 import { Video } from "../models/video.models.js"
 import { uploadToCloudinary, deletefromCloudinary, deleteVideoFromCloudinary } from "../utils/cloudinary.js"
+import { getVideoDuration } from "../utils/videoDuration.js"
 
 //#region Code to create video and upload it to cloudinary and db
 const createVideo = asyncHandler(async (req, res) => {
     //get title, description and duration for the video
-    const { title, description, duration } = req.body
+    const { title, description } = req.body
     //all validations when details are obtained ( not empty )
-    if ([title, description, duration].some((field) => { field?.trim() === "" })) {
+    if ([title, description].some((field) => { field?.trim() === "" })) {
         throw new ApiError(400, "Please enter all the fields")
     }
 
@@ -31,9 +31,13 @@ const createVideo = asyncHandler(async (req, res) => {
         throw new ApiError(401, "Something went wrong, Please check if you have uploaded the thumbnail image")
     }
 
+    //get duration for the video, once you upload it to cloudinary
+    const duration = await getVideoDuration(videoFilePath)
+
     //upload video and thumbnail in cloudinary, check for successful upload, if uploaded then you will get the url
     const video = await uploadToCloudinary(videoFilePath);
     const thumbnail = await uploadToCloudinary(thumbnailPath);
+
 
     //save all the details in a document in db
     const videoDetails = await Video.create({
