@@ -12,10 +12,16 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     const { channelId } = req.params
     const subscriberId = req.user._id
 
-
     //check if channel id is valid or not, meaning there is a channel by this id or not
     if (!isValidObjectId(channelId)) {
         throw new ApiError(401, "Invalid channel, check it's ID")
+    }
+
+    //bug1: When entering channel Id which does not exist, user was able to subscribe or unsubscribe it
+    //fix: Need to check whether channel Id (channel) is present in USER db or not as channel is nothing but a user only
+    const isChannelExisting = await User.findById(channelId)
+    if(!isChannelExisting){
+        throw new ApiError(401, "Channel does not exist, please enter correct channel Id")
     }
 
     //if channel present, then compare both ids as user cannot subscribe his own channel
@@ -53,6 +59,8 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         throw new ApiError(401, "Invalid Channel Name")
     }
 
+    //bug2: when $match does not find a match, it does not throw an error instead returns an empty array
+    //fix: simply check if countOfSubscribers has data or not, and manually throw an error if nothing matches and empty array is returned.
     const countOfSubscribers = await User.aggregate([
         {
             //We will match the searched or given username with the one in database, if username is present then further work
@@ -84,6 +92,10 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
             }
         }
     ])
+
+    if(countOfSubscribers.length === 0){
+        throw new ApiError(401, "Channel profile you wish to see does not exist")
+    }
 
     //return the number of subscribers a channel has as a response
     return res.status(201).json(
@@ -151,6 +163,10 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
             }
         }
     ])
+
+    if(channelSubscriptionCount.length === 0){
+        throw new ApiError(401, "Channel profile you wish to see does not exist")
+    }
 
     //return the number of channels user has subscribed to
     return res.status(201).json(
