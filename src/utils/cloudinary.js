@@ -37,8 +37,10 @@ const deletefromCloudinary = async (publicId) => {
                     return false;
                 }
             })
+        fs.unlinkSync(localFilePath)
         return response;
     } catch (error) {
+        fs.unlinkSync(localFilePath)
         return null;
     }
 }
@@ -58,8 +60,10 @@ const deleteVideoFromCloudinary = async (publicId) => {
                     return false;
                 }
             })
+        fs.unlinkSync(localFilePath)
         return response;
     } catch (error) {
+        fs.unlinkSync(localFilePath)
         return null;
     }
 }
