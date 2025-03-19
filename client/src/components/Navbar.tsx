@@ -35,7 +35,7 @@ const Navbar: React.FC = () => {
     }, []);
 
     return (
-        <nav className={`w-full p-4 sticky top-0 z-50 border-b ${isDarkTheme ? 'bg-gray-900 text-white border-gray-700' : 'bg-sidebar text-gray-800 border-[rgb(237,234,226)]'}`}>
+        <nav className={`w-full p-4 sticky top-0 z-50 border-b ${isDarkTheme ? 'bg-gray-900 text-white border-gray-700' : 'bg-sidebar text-gray-800 border-gray-200'}`}>
             <div className="flex items-center justify-between max-w-8xl mx-auto relative">
 
                 {/* Logo */}
