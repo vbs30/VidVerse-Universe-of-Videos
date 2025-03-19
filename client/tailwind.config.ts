@@ -1,24 +1,13 @@
-import type { Config } from 'tailwindcss';
-
-const config: Config = {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  darkMode: "class", // Ensure it's set to "class"
   content: [
-    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    "./pages/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+    "./app/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class', // Enable dark mode with class strategy
   theme: {
-    extend: {
-      colors: {
-        primary: "#1E40AF",
-        secondary: "#9333EA",
-        darkBg: "#1A202C", // Dark mode background color
-        darkText: "#CBD5E0", // Dark mode text color
-      },
-      fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-      },
-    },
+    extend: {},
   },
   plugins: [],
 };
-
-export default config;
