@@ -23,12 +23,12 @@ const uploadToCloudinary = async (localFilePath) => {
     }
 }
 
-const deletefromCloudinary = async (publicId) => {
+const deletefromCloudinary = async (localFilePath) => {
     try {
-        if (!publicId) {
+        if (!localFilePath) {
             return null;
         }
-        const response = await cloudinary.uploader.destroy(publicId)
+        const response = await cloudinary.uploader.destroy(localFilePath)
             .then(({ result }) => {
                 if (result === 'ok') {
                     return true;
@@ -46,12 +46,12 @@ const deletefromCloudinary = async (publicId) => {
 }
 
 //made this method, to only lock the resource_type as video
-const deleteVideoFromCloudinary = async (publicId) => {
+const deleteVideoFromCloudinary = async (localFilePath) => {
     try {
-        if (!publicId) {
+        if (!localFilePath) {
             return null;
         }
-        const response = await cloudinary.uploader.destroy(publicId, { resource_type: "video" })
+        const response = await cloudinary.uploader.destroy(localFilePath, { resource_type: "video" })
             .then(({ result }) => {
                 if (result === 'ok') {
                     return true;
@@ -60,10 +60,8 @@ const deleteVideoFromCloudinary = async (publicId) => {
                     return false;
                 }
             })
-        fs.unlinkSync(localFilePath)
         return response;
     } catch (error) {
-        fs.unlinkSync(localFilePath)
         return null;
     }
 }
