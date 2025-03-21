@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import { Menu, Search, Sun, Moon, X, User, MonitorPause } from 'lucide-react';
 import Link from 'next/link';
+import { SignUpBox } from './SignupBox';
 
 const Navbar: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -36,7 +37,7 @@ const Navbar: React.FC = () => {
     }, []);
 
     return (
-        <nav className={`w-full p-4 sticky top-0 z-50 border-b ${isDarkTheme ? 'bg-gray-900 text-white border-gray-700' : 'bg-sidebar text-gray-800 border-gray-200'}`}>
+        <div className={`w-full p-4 sticky top-0 z-50 border-b ${isDarkTheme ? 'bg-gray-900 text-white border-gray-700' : 'bg-sidebar text-gray-800 border-gray-200'}`}>
             <div className="flex items-center justify-between max-w-8xl mx-auto relative">
 
                 {/* Logo */}
@@ -64,11 +65,7 @@ const Navbar: React.FC = () => {
 
                 {/* Desktop Buttons */}
                 <div className="hidden md:flex items-center gap-4">
-                    <Link href='/signup'>
-                        <button className={`rounded-full py-1 px-4 border flex items-center gap-2 ${isDarkTheme ? 'border-white text-white hover:bg-gray-800' : 'border-black text-black hover:bg-gray-100'}`}>
-                            <User size={16} /> Sign In
-                        </button>
-                    </Link>
+                    <SignUpBox className={`rounded-full py-1 px-4 border flex items-center gap-2 ${isDarkTheme ? 'border-white text-white hover:bg-gray-800' : 'border-black text-black hover:bg-gray-100'}`} />
                     <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
                         {isDarkTheme ? <Sun size={20} /> : <Moon size={20} />}
                     </button>
@@ -101,11 +98,7 @@ const Navbar: React.FC = () => {
                     {/* Hamburger Dropdown - Opens on Right Only */}
                     {isMenuOpen && (
                         <div ref={menuRef} className="absolute top-12 right-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg p-2 w-48">
-                            <Link href='/signup'>
-                                <button className="w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
-                                    <User size={16} /> Sign In
-                                </button>
-                            </Link>
+                            <SignUpBox className={`w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md`} />
                             <button onClick={toggleTheme} className="w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
                                 {isDarkTheme ? <Sun size={20} /> : <Moon size={20} />} Toggle Theme
                             </button>
@@ -113,7 +106,7 @@ const Navbar: React.FC = () => {
                     )}
                 </div>
             </div>
-        </nav>
+        </div>
     );
 };
 
