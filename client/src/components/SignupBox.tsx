@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect } from "react";
+import { z, ZodError } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import { useForm } from "react-hook-form";
 import {
     AlertDialog,
@@ -17,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, User, UploadCloud, XCircle, Check, AlertCircle, Loader2 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot, } from "@/components/ui/input-otp";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { signUpStep1Schema, type SignUpStep1, signUpStep4Schema, type SignUpStep4 } from "../schemas/signup.schemas";
+import { signUpStep1Schema, type SignUpStep1, signUpStep3Schema, type SignUpStep3, signUpStep4Schema, type SignUpStep4 } from "../schemas/signup.schemas";
 import { toast } from "sonner";
 
 const steps = ["1", "2", "3", "4"];
@@ -77,6 +79,16 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
         },
         mode: "onChange", // Enable onChange validation mode
     });
+
+    const fileForm = useForm<SignUpStep3>({
+        resolver: zodResolver(signUpStep3Schema),
+        defaultValues: {
+            avatar: undefined,
+            coverImage: undefined
+        },
+        mode: "onChange"
+    });
+
 
     // Handle step 1 form submission
     const onSubmitStep1 = (data: SignUpStep1) => {
@@ -149,7 +161,17 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, setFile: (file: File | null) => void) => {
         const file = event.target.files?.[0];
         if (file) {
-            setFile(file);
+            try {
+                // Validate the file using the schema
+                signUpStep3Schema.parse({ avatar: file });
+                setFile(file);
+            } catch (error) {
+                if (error instanceof ZodError) {
+                    toast.error(error.errors[0].message);
+                } else {
+                    toast.error("An unexpected error occurred");
+                }
+            }
         }
     };
 
@@ -210,7 +232,6 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
         } catch (error: any) {
             // Handle errors
             toast.error(error.message || "There was a problem creating your account.");
-            console.error("Registration error:", error);
         } finally {
             setIsSubmitting(false);
         }
@@ -621,7 +642,11 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
                                     setStep(step + 1);
                                 }
                             }}
-                            disabled={step === 2 && !otpComplete || isSubmitting}
+                            disabled={
+                (step === 2 && !otpComplete) || 
+                (step === 3 && !profileFile) || 
+                isSubmitting
+            }
                             type={step === 1 ? "button" : "button"}
                         >
                             Next

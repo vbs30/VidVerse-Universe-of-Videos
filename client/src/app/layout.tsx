@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -61,8 +62,8 @@ export default function RootLayout({
           <div className="flex h-[calc(100vh-64px)]">
             {/* Fixed width sidebar */}
             <SidebarProvider>
-                <Dashboard />
-              
+              <Dashboard />
+
               {/* Main content area */}
               <div className="flex-1 overflow-hidden flex flex-col">
                 {/* Category header */}
@@ -72,9 +73,9 @@ export default function RootLayout({
                   <div className="w-full overflow-x-auto scrollbar-hide">
                     <div className="flex gap-2 pb-2">
                       {categories.map((category, index) => (
-                        <Button 
-                          key={index} 
-                          variant="outline" 
+                        <Button
+                          key={index}
+                          variant="outline"
                           className="whitespace-nowrap flex-shrink-0"
                         >
                           {category}
@@ -83,11 +84,12 @@ export default function RootLayout({
                     </div>
                   </div>
                 </header>
-                
+
                 {/* Scrollable content area */}
                 <main className="flex-1 overflow-y-auto p-4">
                   <div className="container mx-auto max-w-screen-2xl">
                     {children}
+                    <Toaster position="bottom-left" richColors />
                   </div>
                 </main>
               </div>
