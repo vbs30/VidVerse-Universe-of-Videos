@@ -5,6 +5,7 @@ import { useTheme } from 'next-themes';
 import { Menu, Search, Sun, Moon, X, User, MonitorPause } from 'lucide-react';
 import Link from 'next/link';
 import { SignUpBox } from './SignupBox';
+import { LoginBox } from './LoginBox';
 
 const Navbar: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -65,6 +66,7 @@ const Navbar: React.FC = () => {
 
                 {/* Desktop Buttons */}
                 <div className="hidden md:flex items-center gap-4">
+                    <LoginBox className={`rounded-full py-1 px-4 border flex items-center gap-2 ${isDarkTheme ? 'border-white text-white hover:bg-gray-800' : 'border-black text-black hover:bg-gray-100'}`} />
                     <SignUpBox className={`rounded-full py-1 px-4 border flex items-center gap-2 ${isDarkTheme ? 'border-white text-white hover:bg-gray-800' : 'border-black text-black hover:bg-gray-100'}`} />
                     <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
                         {isDarkTheme ? <Sun size={20} /> : <Moon size={20} />}
@@ -98,6 +100,7 @@ const Navbar: React.FC = () => {
                     {/* Hamburger Dropdown - Opens on Right Only */}
                     {isMenuOpen && (
                         <div ref={menuRef} className="absolute top-12 right-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg p-2 w-48">
+                            <LoginBox className={`w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md`} />
                             <SignUpBox className={`w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md`} />
                             <button onClick={toggleTheme} className="w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
                                 {isDarkTheme ? <Sun size={20} /> : <Moon size={20} />} Toggle Theme

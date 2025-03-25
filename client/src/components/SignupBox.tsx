@@ -643,10 +643,10 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
                                 }
                             }}
                             disabled={
-                (step === 2 && !otpComplete) || 
-                (step === 3 && !profileFile) || 
-                isSubmitting
-            }
+                                (step === 2 && !otpComplete) ||
+                                (step === 3 && !profileFile) ||
+                                isSubmitting
+                            }
                             type={step === 1 ? "button" : "button"}
                         >
                             Next
