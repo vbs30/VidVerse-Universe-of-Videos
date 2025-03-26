@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from "sonner"
-import { User, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { User, CheckCircle, XCircle, Loader2, Lock } from 'lucide-react'
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -37,53 +37,35 @@ export function LoginBox({
 
     const onSubmitLogin = async (data: LoginFormInputs) => {
         setIsSubmitting(true)
-        try {
-            const response = await fetch("http://localhost:8000/api/v1/users/login", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include', // Important for handling cookies
-                body: JSON.stringify({
-                    username: data.username,
-                    email: data.username, // Backend expects either username or email
-                    password: data.password
-                })
+
+        const response = await fetch("http://localhost:8000/api/v1/users/login", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                username: data.username,
+                email: data.username,
+                password: data.password
             })
+        })
 
-            const responseBody = await response.text(); // Get response body as text
+        // Parse response before checking status
+        const responseBody = await response.text();
 
-            if (response.ok) {
-                try {
-                    const jsonData = JSON.parse(responseBody);
-                    toast.success('Login Successful')
-                    setIsOpen(false)
-                    // Optionally handle token storage or user session here
-                } catch (parseError) {
-                    toast.error('Unexpected response format')
-                }
-            } else {
-                try {
-                    const errorData = JSON.parse(responseBody);
-                    toast.error(errorData.message || 'Login Failed')
-                } catch {
-                    toast.error(`Login failed with status: ${response.status}`)
-                }
-            }
-        } catch (error) {
-            // More specific error handling
-            if (error instanceof TypeError) {
-                if (error.message.includes('Failed to fetch')) {
-                    toast.error('Unable to connect to the server. Please check your network connection.')
-                } else {
-                    toast.error('An unexpected network error occurred.')
-                }
-            } else {
-                toast.error('An unexpected error occurred.')
-            }
-        } finally {
+        // Check response status explicitly
+        if (response.ok) {
+            const jsonData = JSON.parse(responseBody);
+            toast.success(jsonData.message || 'Login Successful')
+            setIsOpen(false)
+        } else {
+            const errorData = JSON.parse(responseBody);
+            console.log(errorData)
+            toast.error(errorData.message || 'Login Failed')
             setIsSubmitting(false)
         }
+
     }
 
     return (
@@ -101,7 +83,7 @@ export function LoginBox({
                     onClick={() => setIsOpen(true)}
                     {...props}
                 >
-                    <User size={16} /> Login
+                    <Lock size={16} /> Login
                 </button>
             </AlertDialogTrigger>
 

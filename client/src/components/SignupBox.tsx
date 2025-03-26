@@ -200,7 +200,7 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
             if (profileFile) {
                 formDataToSend.append("avatar", profileFile);
             } else {
-                throw new Error("Profile image is required");
+                toast.error("Profile image is required");
             }
 
             // Add cover image if available (optional)
@@ -218,7 +218,7 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
             });
 
             // Handle API response
-            const result = await response.json();
+            const responseBody = await response.json();
 
             if (!response.ok) {
                 const errorText = await response.text(); // Get the response text
@@ -226,7 +226,7 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
             }
 
             // Success - close dialog and show success message
-            toast.success("Registration successful! Your account has been created successfully.");
+            toast.success(responseBody.message || "Registration successful! Your account has been created successfully.");
             setIsOpen(false);
 
         } catch (error: any) {
