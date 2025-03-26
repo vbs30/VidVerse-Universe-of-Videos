@@ -1,8 +1,6 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
-import { User } from "../models/user.models.js";
 import { Tweet } from "../models/tweets.models.js";
 
 
@@ -15,7 +13,7 @@ const createTweets = asyncHandler(async (req, res) => {
 
     //check whether user has inputed content for the tweet or not
     if (!content) {
-        throw new ApiError(401, "Please enter a tweet")
+        return res.status(400).json(new ApiResponse(401, [], "Please enter a tweet"))
     }
 
     //if we get content and username, just store it in Tweet collection
@@ -23,7 +21,7 @@ const createTweets = asyncHandler(async (req, res) => {
 
     //If tweet document is not created, throw an error
     if (!tweet) {
-        throw new ApiError(401, "Something went wrong while creating your tweet")
+        return res.status(400).json(new ApiResponse(401, [], "Something went wrong while creating your tweet"))
     }
 
     //if tweet is created successfully, return a response with tweet details.
@@ -43,7 +41,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
 
     //If we don't get any details, throw an error
     if (!tweetDetails) {
-        throw new ApiError(401, "Tweet not found")
+        return res.status(400).json(new ApiResponse(401, [], "Tweet not found"))
     }
 
     //If we get tweet document, send a successful response
@@ -61,12 +59,12 @@ const updateTweet = asyncHandler(async (req, res) => {
 
     //check if given tweetId is correct or not
     if(!isValidObjectId(tweetId)){
-        throw new ApiError(401, "Specified wrong tweet-id")
+        return res.status(400).json(new ApiResponse(401, [], "Got wrong tweet-id"))
     }
     
     //If new content is not obtained, throw an error
     if (!content) {
-        throw new ApiError(401, "Please enter content to update")
+        return res.status(400).json(new ApiResponse(401, [], "Please enter content for the tweet to update"))
     }
 
     //we will find the document and check whether that particular tweet is made by current user or not, as user can only modify his created tweets
@@ -75,7 +73,7 @@ const updateTweet = asyncHandler(async (req, res) => {
 
     //Check if content is updated
     if (!newTweet) {
-        throw new ApiError(401, "Tweet was not updated, either there is no such tweet or you are not the creator of it or there is some technical issue")
+        return res.status(400).json(new ApiResponse(401, [], "Tweet was not updated, either there is no such tweet or you are not the creator of it or there is some technical issue"))
     }
 
     //return a response if tweet is updated
@@ -92,7 +90,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
 
     //check if given tweetId is correct or not
     if(!isValidObjectId(tweetId)){
-        throw new ApiError(401, "Specified wrong tweet-id")
+        return res.status(400).json(new ApiResponse(401, [], "Got wrong tweet-id"))
     }
 
     //we wil check whether current user who wish to delete a tweet is actually it's creater (owner) in same query
@@ -101,7 +99,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
 
     //Check if content is deleted
     if (!newTweet) {
-        throw new ApiError(401, "Tweet was not deleted, either there is no such tweet or you are not the creator of it or there is some technical issue")
+        return res.status(400).json(new ApiResponse(401, [], "Tweet was not deleted, either there is no such tweet or you are not the creator of it or there is some technical issue"))
     }
 
     //return a response if tweet is deleted
@@ -116,7 +114,7 @@ const getAllTweets = asyncHandler(async (req, res) => {
     const tweets = await Tweet.find({})
 
     if (!tweets) {
-        throw new ApiError(401, "Something went wrong while fetching all the tweets")
+        return res.status(400).json(new ApiResponse(401, [], "Something went wrong while fetching all the tweets"))
     }
 
     return res.status(201).json(

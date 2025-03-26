@@ -1,6 +1,5 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { Like } from "../models/likes.models.js";
-import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Video } from "../models/video.models.js";
@@ -15,13 +14,13 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
     //check whether video id is valid or not
     if (!isValidObjectId(videoId)) {
-        throw new ApiError(401, "Invalid video ID");
+        return res.status(400).json(new ApiResponse(401, [], "Invalid video id"))
     }
 
     //if video id is valid, check whether this video really exists or not
     const isVideoExisting = await Video.findById(videoId)
     if (!isVideoExisting) {
-        throw new ApiError(401, "The video you want to like does not exist")
+        return res.status(400).json(new ApiResponse(401, [], "You cannot like this video"))
     }
 
     //check if video already is liked by that user, if liked then delete that document (this will automatically unlike the video)
@@ -51,13 +50,13 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
     //check whether comment id is valid or not
     if (!isValidObjectId(commentId)) {
-        throw new ApiError(401, "Invalid comment ID");
+        return res.status(400).json(new ApiResponse(401, [], "Invalid comment id"))
     }
 
     //if comment id is valid, check whether this comment really exists or not
     const isCommentExisting = await Comment.findById(commentId)
     if (!isCommentExisting) {
-        throw new ApiError(401, "The comment you want to like does not exist")
+        return res.status(400).json(new ApiResponse(401, [], "You cannot like this comment"))
     }
 
     //check if comment is already liked or not, this can be done by getting the document where userid and commentid is stored
@@ -86,13 +85,13 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 
     //check whether tweet id is valid or not
     if (!isValidObjectId(tweetId)) {
-        throw new ApiError(400, "Invalid tweet ID");
+        return res.status(400).json(new ApiResponse(401, [], "Invalid tweet id"))
     }
 
     //if tweet id is valid, check whether this tweet really exists or not
     const isTweetExisting = await Tweet.findById(tweetId)
     if (!isTweetExisting) {
-        throw new ApiError(401, "The tweet you want to like does not exist")
+        return res.status(400).json(new ApiResponse(401, [], "You cannot like this tweet"))
     }
 
     //check if tweet is already liked or not, this can be done by getting the document where userid and tweetid is stored

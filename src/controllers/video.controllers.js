@@ -12,7 +12,7 @@ const createVideo = asyncHandler(async (req, res) => {
     const { title, description } = req.body
     //all validations when details are obtained ( not empty )
     if ([title, description].some((field) => { field?.trim() === "" })) {
-        throw new ApiError(400, "Please enter all the fields")
+        return res.status(400).json(new ApiResponse(401, [], "Please enter all fields"))
     }
 
     //get current user
@@ -24,11 +24,11 @@ const createVideo = asyncHandler(async (req, res) => {
     const thumbnailPath = req.files?.thumbnail[0].path
 
     if (!videoFilePath) {
-        throw new ApiError(401, "Something went wrong, Please check if you have uploaded the video")
+        return res.status(400).json(new ApiResponse(401, [], "Something went wrong, Please check if you have uploaded the video"))
     }
 
     if (!thumbnailPath) {
-        throw new ApiError(401, "Something went wrong, Please check if you have uploaded the thumbnail image")
+        return res.status(400).json(new ApiResponse(401, [], "Something went wrong, Please check if you have uploaded the thumbnail image"))
     }
 
     //get duration for the video, once you upload it to cloudinary
@@ -53,7 +53,7 @@ const createVideo = asyncHandler(async (req, res) => {
 
     //check if video is stored in db
     if (!videoDetails) {
-        throw new ApiError(401, "Something went wrong while storing the video")
+        return res.status(400).json(new ApiResponse(401, [], "Something went wrong while saving the video"))
     }
 
     //if video is stored successfully, return a response
@@ -70,7 +70,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 
     //check whether the videoId is valid or not
     if (!isValidObjectId(videoId)) {
-        throw new ApiError(401, "Please enter correct video Id")
+        return res.status(400).json(new ApiResponse(401, [], "Please enter correct video id"))
     }
 
     //if videoId is valid, obtain the video details from db
@@ -78,7 +78,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 
     //check whether video details are correctly fetched or not, if not then send an error
     if (!video) {
-        throw new ApiError(401, "Video not found, enter correct video id")
+        return res.status(400).json(new ApiResponse(401, [], "Please enter correct video id as video not found"))
     }
 
     //if video details are obtained, send a success response with video file (video url)
@@ -106,7 +106,7 @@ const getVideoByUserId = asyncHandler(async (req, res) => {
 
         // Check if videos exist
         if (!videos.length) {
-            throw new ApiError(404, "No videos found for this user");
+            return res.status(400).json(new ApiResponse(401, [], "No videos created by this user"))
         }
 
         // Get total video count for pagination info
@@ -133,7 +133,7 @@ const updateVideoDetails = asyncHandler(async (req, res) => {
 
     //get existing video document based on provided VideoId which is to be validated before use
     if (!isValidObjectId(videoId)) {
-        throw new ApiError(401, "Please enter correct video Id")
+        return res.status(400).json(new ApiResponse(401, [], "Please enter correct video id"))
     }
     const videoDetails = await Video.findById(videoId)
 
@@ -155,7 +155,7 @@ const updateVideoDetails = asyncHandler(async (req, res) => {
 
         const updatedThumbnailToCloudinary = await uploadToCloudinary(thumbnail)
         if (!updatedThumbnailToCloudinary) {
-            throw new ApiError(401, "Thumbnail has not been uploaded to cloudinary")
+            return res.status(400).json(new ApiResponse(401, [], "Thumbnail was not uploaded to cloudinary"))
         }
 
         updateFields.thumbnail = updatedThumbnailToCloudinary.url
@@ -168,7 +168,7 @@ const updateVideoDetails = asyncHandler(async (req, res) => {
 
         const updatedVideoToCloudinary = await uploadToCloudinary(videoFile)
         if (!updatedVideoToCloudinary) {
-            throw new ApiError(401, "Video has not been uploaded to cloudinary")
+            return res.status(400).json(new ApiResponse(401, [], "Video was not uploaded to cloudinary"))
         }
 
         updateFields.videoFile = updatedVideoToCloudinary.url
@@ -176,13 +176,13 @@ const updateVideoDetails = asyncHandler(async (req, res) => {
 
     // If no fields provided, throw an error
     if (Object.keys(updateFields).length === 0) {
-        throw new ApiError(400, "Please provide at least one field to update");
+        return res.status(400).json(new ApiResponse(401, [], "Please provide atleast one field to update"))
     }
 
     const newVideoDetails = await Video.findOneAndUpdate({ _id: videoId, ownerId: req.user._id }, { $set: updateFields }, { new: true })
 
     if (!newVideoDetails) {
-        throw new ApiError(404, "Video not found or could not be updated");
+        return res.status(400).json(new ApiResponse(401, [], "Something went wrong while updating the video"))
     }
 
     return res.status(200).json(
@@ -199,7 +199,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
     const videoDetails = await Video.findById(videoId)
 
     if (!isValidObjectId(videoId)) {
-        throw new ApiError(401, "Please enter correct video Id")
+        return res.status(400).json(new ApiResponse(401, [], "Please enter correct video id"))
     }
 
     //delete the video from cloudinary also
@@ -212,7 +212,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     //if we don't get any video details, send an error
     if (!deletedVideo) {
-        throw new ApiError(401, "Either the video was not created by you or something went wrong while deleting it")
+        return res.status(400).json(new ApiResponse(401, [], "Either the video was not created by you or something went wrong while deleting it"))
     }
 
     //if Video details are fetched, delete operation is sucessful, so send a response
@@ -244,7 +244,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
     // Check if videos were found, if not, throw an error
     if (!videos.docs || videos.docs.length === 0) {
-        throw new ApiError(404, "No videos found or an error occurred while fetching.");
+        return res.status(400).json(new ApiResponse(401, [], "No videos found or an error occurred while fetching."))
     }
 
     // Return successful response with the fetched videos

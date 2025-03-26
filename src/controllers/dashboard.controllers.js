@@ -1,5 +1,4 @@
 import { Video } from "../models/video.models.js";
-import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -9,7 +8,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     const videos = await Video.find({});
 
     if(!videos){
-        throw new ApiError(401, "NO videos found in the database");
+        return res.status(400).json(new ApiResponse(401, [], "No videos exist in database"))
     }
 
     // Return successful response with the fetched videos

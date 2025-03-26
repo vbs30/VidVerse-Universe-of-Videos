@@ -1,6 +1,5 @@
 import mongoose, { isValidObjectId } from "mongoose"
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/apiError.js"
 import { ApiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.models.js"
 import { Subscription } from "../models/subscription.models.js";
@@ -14,19 +13,19 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 
     //check if channel id is valid or not, meaning there is a channel by this id or not
     if (!isValidObjectId(channelId)) {
-        throw new ApiError(401, "Invalid channel, check it's ID")
+        return res.status(400).json(new ApiResponse(401, [], "Invalid channel id"))
     }
 
     //bug1: When entering channel Id which does not exist, user was able to subscribe or unsubscribe it
     //fix: Need to check whether channel Id (channel) is present in USER db or not as channel is nothing but a user only
     const isChannelExisting = await User.findById(channelId)
     if(!isChannelExisting){
-        throw new ApiError(401, "Channel does not exist, please enter correct channel Id")
+        return res.status(400).json(new ApiResponse(401, [], "Channel does not exist"))
     }
 
     //if channel present, then compare both ids as user cannot subscribe his own channel
     if (subscriberId.toString() === channelId.toString()) {
-        throw new ApiError(401, "User cannot subscribe to himself or his own channel")
+        return res.status(400).json(new ApiResponse(401, [], "User cannot subscribe to his own channel"))
     }
 
     //now, once we know that subscriber and channel have different ids, we can check whether they have already subscribed or not
@@ -56,7 +55,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     //first of all we will get the channel name (user's channel name) as input to search and return count of subscribers of that channel
     const { channelName } = req.params
     if (!channelName.trim()) {
-        throw new ApiError(401, "Invalid Channel Name")
+        return res.status(400).json(new ApiResponse(401, [], "Invalid channel name"))
     }
 
     //bug2: when $match does not find a match, it does not throw an error instead returns an empty array
@@ -94,7 +93,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     ])
 
     if(countOfSubscribers.length === 0){
-        throw new ApiError(401, "Channel profile you wish to see does not exist")
+        return res.status(400).json(new ApiResponse(401, [], "Channel profile you wish to see does not exist"))
     }
 
     //return the number of subscribers a channel has as a response
@@ -109,7 +108,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     //getting count of how many channels has user subscribed
     const { username } = req.params
     if (!username.trim()) {
-        throw new ApiError(401, "Invalid Username")
+        return res.status(400).json(new ApiResponse(401, [], "Invalid Username"))
     }
 
     const channelSubscriptionCount = await User.aggregate([
@@ -165,7 +164,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     ])
 
     if(channelSubscriptionCount.length === 0){
-        throw new ApiError(401, "Channel profile you wish to see does not exist")
+        return res.status(400).json(new ApiResponse(401, [], "User has not subscribed to any channel"))
     }
 
     //return the number of channels user has subscribed to
