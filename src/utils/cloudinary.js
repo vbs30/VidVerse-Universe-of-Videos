@@ -37,10 +37,8 @@ const deletefromCloudinary = async (localFilePath) => {
                     return false;
                 }
             })
-        fs.unlinkSync(localFilePath)
         return response;
     } catch (error) {
-        fs.unlinkSync(localFilePath)
         return null;
     }
 }
