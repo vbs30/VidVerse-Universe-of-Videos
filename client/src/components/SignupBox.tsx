@@ -21,10 +21,12 @@ import { InputOTP, InputOTPGroup, InputOTPSlot, } from "@/components/ui/input-ot
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { signUpStep1Schema, type SignUpStep1, signUpStep3Schema, type SignUpStep3, signUpStep4Schema, type SignUpStep4 } from "../schemas/signup.schemas";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const steps = ["1", "2", "3", "4"];
 
-export function SignUpBox({ className, onSignupSuccess, ...props }: React.ComponentProps<"div"> & { onSignupSuccess?: (userData: any) => void }) {
+export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) {
+    const { login } = useAuth();
     const [step, setStep] = useState(1);
     const [isOpen, setIsOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -231,8 +233,8 @@ export function SignUpBox({ className, onSignupSuccess, ...props }: React.Compon
             });
             const userData = await userResponse.json();
 
-            if (userData.success && onSignupSuccess) {
-                onSignupSuccess(userData.data);
+            if (userData.success) {
+                login(userData.data);
             }
 
             // Success - close dialog and show success message

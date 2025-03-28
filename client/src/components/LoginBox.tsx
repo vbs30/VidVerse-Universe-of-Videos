@@ -18,17 +18,18 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
 import { LoginSchema, LoginFormInputs } from "@/schemas/login.schemas"
+import { useAuth } from '@/contexts/AuthContext' // Import the useAuth hook
 
 export function LoginBox({
     className,
     children,
-    onLoginSuccess,
     ...props
-}: React.ComponentPropsWithoutRef<typeof AlertDialogTrigger> & {
-    onLoginSuccess?: (userData: any) => void
-}) {
+}: React.ComponentPropsWithoutRef<typeof AlertDialogTrigger>) {
     const [isOpen, setIsOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+
+    // Use the AuthContext
+    const { login } = useAuth()
 
     const form = useForm<LoginFormInputs>({
         resolver: zodResolver(LoginSchema),
@@ -68,8 +69,9 @@ export function LoginBox({
             });
             const userData = await userResponse.json();
 
-            if (userData.success && onLoginSuccess) {
-                onLoginSuccess(userData.data);
+            if (userData.success) {
+                // Use the login function from AuthContext
+                login(userData.data);
             }
 
             setIsOpen(false)

@@ -132,7 +132,7 @@ export const Home: React.FC = () => {
   return (
     <>
       {/* Category header */}
-      <header className="sticky top-0 flex h-16 shrink-0 items-center border-b bg-background px-4 z-10">
+      <header className=" top-0 flex h-16 shrink-0 items-center border-b bg-background px-4 z-10">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mx-2 h-4" />
         <div className="w-full overflow-x-auto scrollbar-hide">

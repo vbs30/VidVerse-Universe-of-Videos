@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/ui/theme-provider"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Toaster } from "sonner";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AuthProvider>
           <Navbar />
           <div className="flex h-[calc(100vh-64px)]">
             <SidebarProvider>
@@ -51,6 +53,7 @@ export default function RootLayout({
               </div>
             </SidebarProvider>
           </div>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

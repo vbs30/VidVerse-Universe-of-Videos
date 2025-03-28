@@ -1,17 +1,18 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
   Home,
-  Video,
+  Twitter,
   History,
   Users,
   PlusCircle,
   Edit,
-  Trash2,
-  Twitter,
+  Video,
+  UserIcon,
+  Settings,
   LogIn,
   UserPlus
 } from 'lucide-react';
@@ -29,39 +30,12 @@ import {
 
 import { LoginBox } from './LoginBox';
 import { SignUpBox } from './SignupBox';
-
-interface User {
-  _id: string;
-  username: string;
-  fullName: string;
-  avatar: string;
-  email: string;
-}
+import { useAuth } from '@/contexts/AuthContext';
 
 export function Dashboard() {
-  const [user, setUser] = useState<User | null>(null);
   const { theme } = useTheme();
+  const { user } = useAuth();
   const isDarkTheme = theme === 'dark';
-
-  useEffect(() => {
-    // Fetch current user
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/api/v1/users/get-current-user', {
-          credentials: 'include'
-        });
-        const data = await response.json();
-
-        if (data.success) {
-          setUser(data.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user', error);
-      }
-    };
-
-    fetchCurrentUser();
-  }, []);
 
   const guestMenuItems = [
     {
@@ -115,6 +89,19 @@ export function Dashboard() {
       url: "/channel/manage",
       icon: Edit,
     }
+  ];
+
+  const myProfileItems = [
+    {
+      title: "My Profile",
+      url: "/profile",
+      icon: UserIcon,
+    },
+    {
+      title: "Settings",
+      url: "/settings",
+      icon: Settings,
+    },
   ];
 
   const renderGuestContent = () => (
@@ -207,7 +194,7 @@ export function Dashboard() {
         <SidebarGroup className="mt-4">
           <SidebarGroupLabel>Profile</SidebarGroupLabel>
           <SidebarGroupContent>
-            <div className="flex items-center p-2 space-x-3">
+            <div className="flex items-center p-2 space-x-3 mb-2">
               <img
                 src={user?.avatar}
                 alt={user?.username}
@@ -218,6 +205,18 @@ export function Dashboard() {
                 <p className="text-xs text-gray-500">{user?.email}</p>
               </div>
             </div>
+            <SidebarMenu>
+              {myProfileItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <Link href={item.url}>
+                      <item.icon className="mr-2" />
+                      {item.title}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

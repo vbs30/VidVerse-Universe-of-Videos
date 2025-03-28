@@ -2,27 +2,22 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
-import { Menu, Search, Sun, Moon, X, User, MonitorPause, LogOut } from 'lucide-react';
+import { Menu, Search, Sun, Moon, X, User, MonitorPause, LogOut, UserRoundCog } from 'lucide-react';
 import Link from 'next/link';
 import { SignUpBox } from './SignupBox';
 import { LoginBox } from './LoginBox';
-
-interface User {
-    _id: string;
-    username: string;
-    fullName: string;
-    avatar: string;
-    email: string;
-}
+import { useAuth } from '@/contexts/AuthContext';
 
 export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const [user, setUser] = useState<User | null>(null);
 
     const { theme, setTheme } = useTheme();
     const isDarkTheme = theme === 'dark';
+
+    // Use the AuthContext
+    const { user, logout } = useAuth();
 
     const toggleTheme = () => setTheme(isDarkTheme ? 'light' : 'dark');
 
@@ -31,42 +26,7 @@ export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
 
     useEffect(() => {
         setMounted(true);
-
-        // Fetch current user
-        const fetchCurrentUser = async () => {
-            try {
-                const response = await fetch('http://localhost:8000/api/v1/users/get-current-user', {
-                    credentials: 'include'
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    setUser(data.data);
-                }
-            } catch (error) {
-                console.error('Failed to fetch user', error);
-            }
-        };
-
-        fetchCurrentUser();
     }, []);
-
-    // Logout handler
-    const handleLogout = async () => {
-        try {
-            const response = await fetch('http://localhost:8000/api/v1/users/logout', {
-                method: 'POST',
-                credentials: 'include'
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                setUser(null);
-            }
-        } catch (error) {
-            console.error('Logout failed', error);
-        }
-    };
 
     // Close dropdowns when clicking outside
     useEffect(() => {
@@ -83,11 +43,6 @@ export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Add method to update user state externally
-    const updateUserState = (userData: User | null) => {
-        setUser(userData);
-    };
-
     const renderDesktopAuthContent = () => {
         if (user) {
             return (
@@ -98,7 +53,7 @@ export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
                         className="w-8 h-8 rounded-full object-cover"
                     />
                     <button
-                        onClick={handleLogout}
+                        onClick={logout}
                         className={`rounded-full py-1 px-4 border flex items-center gap-2 ${isDarkTheme
                             ? 'border-white text-white hover:bg-gray-800'
                             : 'border-black text-black hover:bg-gray-100'}`}
@@ -116,11 +71,9 @@ export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
             <div className="flex items-center gap-4">
                 <LoginBox
                     className={`rounded-full py-1 px-4 border flex items-center gap-2 ${isDarkTheme ? 'border-white text-white hover:bg-gray-800' : 'border-black text-black hover:bg-gray-100'}`}
-                    onLoginSuccess={(userData) => updateUserState(userData)}
                 />
                 <SignUpBox
                     className={`rounded-full py-1 px-4 border flex items-center gap-2 ${isDarkTheme ? 'border-white text-white hover:bg-gray-800' : 'border-black text-black hover:bg-gray-100'}`}
-                    onSignupSuccess={(userData) => updateUserState(userData)}
                 />
                 <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
                     {isDarkTheme ? <Sun size={20} /> : <Moon size={20} />}
@@ -141,17 +94,17 @@ export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
                         />
                         <span>{user.username}</span>
                     </div>
-                    <Link href="#" className="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
-                        My Profile
+                    <Link href="#" className="w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
+                        <UserRoundCog size={18} /> My Profile
                     </Link>
                     <button
-                        onClick={handleLogout}
+                        onClick={logout}
                         className="w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                     >
-                        <LogOut size={16} /> Logout
+                        <LogOut size={18} /> Logout
                     </button>
                     <button onClick={toggleTheme} className="w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
-                        {isDarkTheme ? <Sun size={20} /> : <Moon size={20} />} Toggle Theme
+                        {isDarkTheme ? <Sun size={18} /> : <Moon size={18} />} Toggle Theme
                     </button>
                 </div>
             );
@@ -159,10 +112,14 @@ export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
 
         return (
             <div ref={menuRef} className="absolute top-12 right-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg p-2 w-48">
-                <LoginBox className={`w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md`} />
-                <SignUpBox className={`w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md`} />
+                <LoginBox
+                    className={`w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md`}
+                />
+                <SignUpBox
+                    className={`w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md`}
+                />
                 <button onClick={toggleTheme} className="w-full text-left py-2 px-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
-                    {isDarkTheme ? <Sun size={20} /> : <Moon size={20} />} Toggle Theme
+                    {isDarkTheme ? <Sun size={18} /> : <Moon size={18} />} Toggle Theme
                 </button>
             </div>
         );
@@ -228,4 +185,4 @@ export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
             </div>
         </div>
     );
-};
+}
