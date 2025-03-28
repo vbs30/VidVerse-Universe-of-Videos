@@ -22,8 +22,11 @@ import { LoginSchema, LoginFormInputs } from "@/schemas/login.schemas"
 export function LoginBox({
     className,
     children,
+    onLoginSuccess,
     ...props
-}: React.ComponentPropsWithoutRef<typeof AlertDialogTrigger>) {
+}: React.ComponentPropsWithoutRef<typeof AlertDialogTrigger> & {
+    onLoginSuccess?: (userData: any) => void
+}) {
     const [isOpen, setIsOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -58,6 +61,17 @@ export function LoginBox({
         if (response.ok) {
             const jsonData = JSON.parse(responseBody);
             toast.success(jsonData.message || 'Login Successful')
+
+            // Fetch current user data after successful login
+            const userResponse = await fetch('http://localhost:8000/api/v1/users/get-current-user', {
+                credentials: 'include'
+            });
+            const userData = await userResponse.json();
+
+            if (userData.success && onLoginSuccess) {
+                onLoginSuccess(userData.data);
+            }
+
             setIsOpen(false)
         } else {
             const errorData = JSON.parse(responseBody);
@@ -65,7 +79,6 @@ export function LoginBox({
             toast.error(errorData.message || 'Login Failed')
             setIsSubmitting(false)
         }
-
     }
 
     return (

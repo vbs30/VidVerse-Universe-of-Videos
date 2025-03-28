@@ -24,7 +24,7 @@ import { toast } from "sonner";
 
 const steps = ["1", "2", "3", "4"];
 
-export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) {
+export function SignUpBox({ className, onSignupSuccess, ...props }: React.ComponentProps<"div"> & { onSignupSuccess?: (userData: any) => void }) {
     const [step, setStep] = useState(1);
     const [isOpen, setIsOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -223,6 +223,16 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
             if (!response.ok) {
                 const errorText = await response.text(); // Get the response text
                 throw new Error(`Error ${response.status}: ${errorText}`); // Throw an error with the status and response text
+            }
+
+            // Success - fetch current user data
+            const userResponse = await fetch('http://localhost:8000/api/v1/users/get-current-user', {
+                credentials: 'include'
+            });
+            const userData = await userResponse.json();
+
+            if (userData.success && onSignupSuccess) {
+                onSignupSuccess(userData.data);
             }
 
             // Success - close dialog and show success message
