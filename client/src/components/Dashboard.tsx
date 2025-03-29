@@ -76,7 +76,7 @@ export function Dashboard() {
   const userChannelItems = [
     {
       title: "My Channel",
-      url: "/channel",
+      url: "/my-channel",
       icon: Video,
     },
     {

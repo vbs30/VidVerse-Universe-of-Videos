@@ -123,6 +123,37 @@ const getVideoByUserId = asyncHandler(async (req, res) => {
 });
 //#endregion
 
+//#region Code for getting videos based on user (all videos created by user)
+const getVideoByUsername = asyncHandler(async (req, res) => {
+    try {
+        //first of all we will get the channel name (user's channel name)
+        const { channelName } = req.params
+        if (!channelName.trim()) {
+            return res.status(400).json(new ApiResponse(401, [], "Invalid channel name"))
+        }
+
+        // Get videos by username with pagination and sorting
+        const videos = await Video.find({ ownerName: channelName })
+
+        // Check if videos exist
+        if (!videos.length) {
+            return res.status(400).json(new ApiResponse(401, [], "No videos created by this user"))
+        }
+
+        // Get total video count for pagination info
+        const totalVideos = await Video.countDocuments({ ownerName: channelName });
+
+        // Return successful response
+        return res.status(200).json(
+            new ApiResponse(200, { videos, totalVideos }, `Videos fetched successfully`)
+        );
+    } catch (error) {
+        console.error("Error fetching videos:", error);
+        res.status(500).json(new ApiError(500, "An error occurred while fetching videos"));
+    }
+});
+//#endregion
+
 //#region Code for updating particular video file
 const updateVideoDetails = asyncHandler(async (req, res) => {
     //need to update title, description, thumbnail, video file
@@ -255,4 +286,4 @@ const getAllVideos = asyncHandler(async (req, res) => {
 //#endregion
 
 
-export { createVideo, getVideoById, getVideoByUserId, deleteVideo, updateVideoDetails, getAllVideos }
+export { createVideo, getVideoById, getVideoByUserId, deleteVideo, updateVideoDetails, getAllVideos, getVideoByUsername }
