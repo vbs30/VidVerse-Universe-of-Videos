@@ -90,7 +90,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
       const response = await fetch(`http://localhost:8000/api/v1/subscription/check/${channelId}`, {
         credentials: 'include',
       });
-      
+
       if (response.ok) {
         const result = await response.json();
         setIsSubscribed(result.data.isSubscribed);
@@ -105,29 +105,59 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
       try {
         setLoading(true);
 
-        // Fetch channel info
-        const channelResponse = await fetch(`http://localhost:8000/api/v1/users/c/${username}`);
-        if (!channelResponse.ok) throw new Error("Failed to fetch channel data");
+        // Fetch channel info first
+        const channelResponse = await fetch(`http://localhost:8000/api/v1/users/c/${encodeURIComponent(username)}`);
+        if (!channelResponse.ok) {
+          const errorText = await channelResponse.text();
+          console.error("Channel fetch error:", channelResponse.status, errorText);
+          throw new Error("Failed to fetch channel data");
+        }
+
         const channelResult: ChannelResponse = await channelResponse.json();
 
-        // Fetch channel videos
-        const videosResponse = await fetch(`http://localhost:8000/api/v1/videos/cv/${username}`);
-        if (!videosResponse.ok) throw new Error("Failed to fetch videos");
-        const videosResult: VideosResponse = await videosResponse.json();
-
-        if (channelResult.success && videosResult.success) {
-          setChannelData(channelResult.data);
-          setVideos(videosResult.data.videos);
-          setTotalVideos(videosResult.data.totalVideos);
-          
-          // Check subscription status after getting channel data
-          if (channelResult.data._id) {
-            await checkSubscriptionStatus(channelResult.data._id);
-          }
-        } else {
-          throw new Error(channelResult.success ? videosResult.message : channelResult.message);
+        if (!channelResult.success) {
+          throw new Error(channelResult.message || "Failed to load channel data");
         }
+
+        // Set channel data immediately so we at least have the channel info
+        setChannelData(channelResult.data);
+
+        // Check subscription status after getting channel data
+        if (channelResult.data._id) {
+          await checkSubscriptionStatus(channelResult.data._id);
+        }
+
+        // Fetch channel videos - handle separately
+        try {
+          const videosResponse = await fetch(`http://localhost:8000/api/v1/videos/cv/${encodeURIComponent(username)}`);
+
+          if (!videosResponse.ok) {
+            console.error("Videos fetch error:", videosResponse.status);
+            // Don't throw here, just set empty videos
+            setVideos([]);
+            setTotalVideos(0);
+          } else {
+            const videosResult: VideosResponse = await videosResponse.json();
+
+            if (videosResult.success) {
+              setVideos(videosResult.data.videos || []);
+              setTotalVideos(videosResult.data.totalVideos || 0);
+            } else {
+              console.warn("Videos fetch returned success: false", videosResult.message);
+              // Set empty videos but don't fail the whole page
+              setVideos([]);
+              setTotalVideos(0);
+            }
+          }
+        } catch (videoErr) {
+          console.error("Error fetching videos:", videoErr);
+          // Set empty videos but don't fail the whole page
+          setVideos([]);
+          setTotalVideos(0);
+        }
+
       } catch (err) {
+        console.error("Full error:", err);
         setError(err instanceof Error ? err.message : "An unknown error occurred");
       } finally {
         setLoading(false);
@@ -166,17 +196,17 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
         // Toggle subscription status
         const newSubscriptionStatus = !isSubscribed;
         setIsSubscribed(newSubscriptionStatus);
-        
+
         // Update subscriber count
         setChannelData(prev => {
           if (!prev) return prev;
-          
+
           const subscribersCount = newSubscriptionStatus
             ? prev.subscribersCount + 1
             : prev.subscribersCount - 1;
-          
+
           toast.success(newSubscriptionStatus ? "Successfully subscribed" : "Successfully unsubscribed");
-          
+
           return {
             ...prev,
             subscribersCount: subscribersCount
