@@ -136,8 +136,11 @@ const getVideoByUsername = asyncHandler(async (req, res) => {
         const videos = await Video.find({ ownerName: channelName })
 
         // Check if videos exist
+        //bug1: If video length is zero meaning user hasn't created any video, giving 400 or 401 error was not handled by frontend as it is an error
+        //meaning 401 is an error code and user can have his channel without any videos
+        //fix: Changing 400 and 401 to status code 200, 201, so that videos not created by user wil not be an error, and will be handled at frontend very well.
         if (!videos.length) {
-            return res.status(400).json(new ApiResponse(401, [], "No videos created by this user"))
+            return res.status(200).json(new ApiResponse(200, [], "No videos created by this user"))
         }
 
         // Get total video count for pagination info
