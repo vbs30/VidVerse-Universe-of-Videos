@@ -8,6 +8,7 @@ export interface User {
     username: string;
     fullName: string;
     avatar: string;
+    coverImage: string;
     email: string;
 }
 
