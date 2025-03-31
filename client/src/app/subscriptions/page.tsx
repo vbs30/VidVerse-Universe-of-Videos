@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { Separator } from "@/components/ui/separator";
 
 interface Channel {
     _id: string;
@@ -66,7 +68,7 @@ const SubscriptionsPage = () => {
 
     if (!isAuthenticated) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
+            <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-black">
                 <div className="text-center p-8 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 max-w-md w-full">
                     <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Not Logged In</h2>
                     <p className="text-gray-600 dark:text-gray-300 mb-6">Please log in to view your subscriptions.</p>
@@ -80,18 +82,32 @@ const SubscriptionsPage = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-[70vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+                <div className="flex flex-col items-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    <p className="mt-4 text-gray-600 dark:text-gray-300">Loading your subscriptions...</p>
+                </div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="flex justify-center items-center min-h-[70vh] px-4">
-                <div className="text-center p-8 rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/20 max-w-md w-full">
-                    <h2 className="text-xl font-medium text-red-800 dark:text-red-200 mb-2">Error</h2>
-                    <p className="text-red-600 dark:text-red-300">{error}</p>
+            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+                <div className="text-center bg-white dark:bg-black p-8 rounded-lg shadow-lg max-w-md">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-8 h-8">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Error</h2>
+                    <p className="mt-2 text-gray-600 dark:text-gray-300">{error}</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors duration-200"
+                    >
+                        Refresh
+                    </button>
                 </div>
             </div>
         );
@@ -99,10 +115,15 @@ const SubscriptionsPage = () => {
 
     if (!subscriptions || subscriptions.channels.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
-                <div className="text-center p-8 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 max-w-md w-full">
-                    <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">No Subscriptions</h2>
-                    <p className="text-gray-600 dark:text-gray-300 mb-6">You haven't subscribed to any channels yet.</p>
+            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+                <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg max-w-md">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-8 h-8">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">No Subscriptions</h2>
+                    <p className="mt-2 text-gray-600 dark:text-gray-300 mb-6">You haven't subscribed to any channels yet.</p>
                     <Link href="/explore" className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                         Explore Channels
                     </Link>
@@ -112,41 +133,52 @@ const SubscriptionsPage = () => {
     }
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Your Subscriptions</h1>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
-                    You're subscribed to {subscriptions.countofChannels} channel{subscriptions.countofChannels !== 1 ? 's' : ''}
-                </p>
-            </div>
+        <div className="flex flex-col h-screen bg-white dark:bg-black">
+            {/* Category header - fixed at the top */}
+            <header className="flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-black px-4 z-10">
+                <SidebarTrigger className="-ml-1" />
+                <Separator orientation="vertical" className="mx-2 h-4 dark:bg-white/10" />
+                <div className="flex items-center space-x-4">
+                    <h1 className="text-xl font-bold pl-2 text-black dark:text-white">Your Subscription List</h1>
+                </div>
+            </header>
 
-            <div className="flex flex-col space-y-4 max-w-3xl mx-auto">
-                {subscriptions.channels.map((channel) => (
-                    <Link href={`/channel/${channel.username}`} className="block w-full">
-                        <div className="flex items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
-                            <div className="h-16 w-16 rounded-full overflow-hidden relative flex-shrink-0 border-2 border-white dark:border-gray-700">
-                                <img
-                                    src={channel.avatar || "/api/placeholder/128/128"}
-                                    alt={channel.username}
-                                    className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white dark:border-gray-950 shadow-md object-cover"
-                                />
-                            </div>
+            {/* Scrollable content area */}
+            <div className="flex-1 overflow-y-auto">
+                <div className="container mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">
+                        You're subscribed to {subscriptions.countofChannels} channel{subscriptions.countofChannels !== 1 ? 's' : ''}
+                    </p>
 
-                            <div className="ml-4 flex-grow">
-                                <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{channel.fullName}</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">@{channel.username}</p>
-                            </div>
+                    <div className="flex flex-col space-y-4 max-w-3xl mx-auto pb-8">
+                        {subscriptions.channels.map((channel) => (
+                            <Link key={channel._id} href={`/channel/${channel.username}`} className="block w-full">
+                                <div className="flex items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
+                                    <div className="border-white dark:border-gray-700">
+                                        <img
+                                            src={channel.avatar || "/api/placeholder/128/128"}
+                                            alt={channel.username}
+                                            className="w-12 h-12 md:w-16 md:h-16 rounded-full border-2 border-gray-950 dark:border-white shadow-md object-cover"
+                                        />
+                                    </div>
 
-                            <div className="flex-shrink-0">
-                                <div className="text-blue-600 dark:text-blue-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                                    </svg>
+                                    <div className="ml-4 flex-grow">
+                                        <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{channel.fullName}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">@{channel.username}</p>
+                                    </div>
+
+                                    <div className="flex-shrink-0">
+                                        <div className="text-blue-600 dark:text-blue-400">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </Link>
-                ))}
+                            </Link>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );
