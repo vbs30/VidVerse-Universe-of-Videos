@@ -174,4 +174,35 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
 })
 //#endregion
 
-export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels }
+//#region Code to check whether current user has subscribed to particular channel or not, for persisting data in frontend
+const checkSubscription = asyncHandler(async (req, res) => {
+    const { channelId } = req.params;
+    const subscriberId = req.user?._id;
+    
+    // If user is not logged in, they are not subscribed
+    if (!subscriberId) {
+        return res.status(200).json(
+            new ApiResponse(200, { isSubscribed: false }, "User not logged in")
+        );
+    }
+    
+    // Check if channel id is valid
+    if (!isValidObjectId(channelId)) {
+        return res.status(400).json(
+            new ApiResponse(400, { isSubscribed: false }, "Invalid channel id")
+        );
+    }
+    
+    // Check if subscription exists
+    const subscription = await Subscription.findOne({ 
+        subscriber: subscriberId, 
+        channelSubscribed: channelId 
+    });
+    
+    return res.status(200).json(
+        new ApiResponse(200, { isSubscribed: !!subscription }, "Subscription status fetched")
+    );
+});
+//#endregion
+
+export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels, checkSubscription }
