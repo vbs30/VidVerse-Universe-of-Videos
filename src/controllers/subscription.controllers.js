@@ -150,7 +150,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
                 _id: "$_id", // Grouping by user's _id
                 username: { $first: "$username" }, // Keep the user's username
                 countofChannels: { $sum: 1 }, // Count the number of channels subscribed
-                channels: { $push: "$channelDetails.username" } // Collect channel usernames
+                channels: { $push: "$channelDetails" } // Collect channel usernames
             }
         },
         {
