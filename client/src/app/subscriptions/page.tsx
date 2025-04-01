@@ -68,13 +68,21 @@ const SubscriptionsPage = () => {
 
     if (!isAuthenticated) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-black">
-                <div className="text-center p-8 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md bg-white dark:bg-gray-800 max-w-md w-full">
-                    <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Not Logged In</h2>
-                    <p className="text-gray-600 dark:text-gray-300 mb-6">Please log in to view your subscriptions.</p>
-                    <Link href="/login" className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                        Login
-                    </Link>
+            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-neutral-800">
+                <div className="text-center bg-white dark:bg-black p-8 rounded-lg shadow-lg max-w-md">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-8 h-8">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Authentication Required</h2>
+                    <p className="mt-2 text-gray-600 dark:text-gray-300">Please log in to view your channel.</p>
+                    <button
+                        onClick={() => window.location.href = '/login'} // Adjust this to your login route
+                        className="mt-6 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors duration-200"
+                    >
+                        Log In
+                    </button>
                 </div>
             </div>
         );
