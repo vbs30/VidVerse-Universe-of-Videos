@@ -16,7 +16,7 @@ router.route("/create-video").post(verifyJWT, upload.fields([
     }
 ]), createVideo)
 
-router.route("/v/:videoId").get(verifyJWT, getVideoById).delete(verifyJWT, deleteVideo)
+router.route("/v/:videoId").get(getVideoById).delete(verifyJWT, deleteVideo)
 router.route("/v/:videoId").patch(verifyJWT, upload.fields([
     {
         name: "thumbnail",

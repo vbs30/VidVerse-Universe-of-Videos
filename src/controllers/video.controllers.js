@@ -83,7 +83,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 
     //if video details are obtained, send a success response with video file (video url)
     return res.status(201).json(
-        new ApiResponse(200, video.videoFile, "Video fetched successfully")
+        new ApiResponse(200, video, "Video fetched successfully")
     )
 })
 //#endregion
