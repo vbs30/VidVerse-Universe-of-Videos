@@ -1,7 +1,7 @@
 'use client'
 
 import VideoGallery from "@/components/VideoGallery";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -52,12 +52,19 @@ interface ApiResponse {
 }
 
 export const Home: React.FC = () => {
-  const [videos, setVideos] = useState<Video[]>([]);
+  const [allVideos, setAllVideos] = useState<Video[]>([]); // All fetched videos
+  const [displayedVideos, setDisplayedVideos] = useState<Video[]>([]); // Currently displayed videos
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [gridColumns, setGridColumns] = useState('grid-cols-4');
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadingRef = useRef<HTMLDivElement>(null);
+  
+  const VIDEOS_PER_PAGE = 12;
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -67,7 +74,10 @@ export const Home: React.FC = () => {
         const data: ApiResponse = await response.json();
 
         if (data.success) {
-          setVideos(data.data);
+          setAllVideos(data.data);
+          // Initially load only the first batch of videos
+          setDisplayedVideos(data.data.slice(0, VIDEOS_PER_PAGE));
+          setHasMore(data.data.length > VIDEOS_PER_PAGE);
         } else {
           setError(data.message || "Failed to fetch videos");
         }
@@ -81,6 +91,71 @@ export const Home: React.FC = () => {
 
     fetchVideos();
   }, []);
+
+  // Load more videos when category changes
+  useEffect(() => {
+    let filteredVideos = allVideos;
+    
+    // In a real app, you'd implement category filtering on the backend
+    // This is just a placeholder for frontend filtering
+    if (selectedCategory) {
+      // Simulate category filtering (replace with real implementation)
+      // filteredVideos = allVideos.filter(video => video.category === selectedCategory);
+    }
+    
+    setDisplayedVideos(filteredVideos.slice(0, VIDEOS_PER_PAGE));
+    setPage(1);
+    setHasMore(filteredVideos.length > VIDEOS_PER_PAGE);
+  }, [selectedCategory, allVideos]);
+
+  // Handle loading more videos
+  const loadMoreVideos = useCallback(() => {
+    if (!hasMore || loading) return;
+    
+    const nextPage = page + 1;
+    const startIndex = (nextPage - 1) * VIDEOS_PER_PAGE;
+    const endIndex = nextPage * VIDEOS_PER_PAGE;
+    
+    let filteredVideos = allVideos;
+    // Apply category filtering (would be better on backend)
+    if (selectedCategory) {
+      // Simulate filtering (replace with real implementation)
+      // filteredVideos = allVideos.filter(video => video.category === selectedCategory);
+    }
+    
+    if (startIndex < filteredVideos.length) {
+      const nextVideos = filteredVideos.slice(startIndex, endIndex);
+      setDisplayedVideos(prev => [...prev, ...nextVideos]);
+      setPage(nextPage);
+      setHasMore(endIndex < filteredVideos.length);
+    } else {
+      setHasMore(false);
+    }
+  }, [allVideos, hasMore, loading, page, selectedCategory]);
+
+  // Intersection Observer for infinite scrolling
+  useEffect(() => {
+    if (loading) return;
+    
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          loadMoreVideos();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    
+    if (loadingRef.current) {
+      observerRef.current.observe(loadingRef.current);
+    }
+    
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [loadMoreVideos, loading, hasMore]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -126,13 +201,13 @@ export const Home: React.FC = () => {
     setSelectedCategory(category === selectedCategory ? null : category);
   };
 
-  if (loading) return <div className="text-center py-8">Loading videos...</div>;
+  if (loading && page === 1) return <div className="text-center py-8">Loading videos...</div>;
   if (error) return <div className="text-center py-8 text-red-500">{error}</div>;
 
   return (
     <>
       {/* Category header */}
-      <header className=" top-0 flex h-16 shrink-0 items-center border-b bg-background px-4 z-10">
+      <header className="top-0 flex h-16 shrink-0 items-center border-b bg-background px-4 z-10">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mx-2 h-4" />
         <div className="w-full overflow-x-auto scrollbar-hide">
@@ -156,10 +231,8 @@ export const Home: React.FC = () => {
         ref={containerRef}
         className="w-full h-[calc(100vh-128px)] p-4 overflow-y-auto"
       >
-        <div
-          className={`grid ${gridColumns} gap-4`}
-        >
-          {videos.length > 0 ? videos.map((video) => (
+        <div className={`grid ${gridColumns} gap-4`}>
+          {displayedVideos.length > 0 ? displayedVideos.map((video) => (
             <VideoGallery
               key={video._id}
               title={video.title}
@@ -173,6 +246,23 @@ export const Home: React.FC = () => {
             <div className="col-span-full text-center py-10 text-gray-500">No videos found</div>
           )}
         </div>
+        
+        {/* Loading indicator for infinite scroll */}
+        {hasMore && (
+          <div 
+            ref={loadingRef} 
+            className="text-center py-4 mt-2"
+          >
+            {loading && page > 1 ? (
+              <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" 
+                   role="status">
+                <span className="sr-only">Loading...</span>
+              </div>
+            ) : (
+              <span className="text-gray-400">Scroll for more videos</span>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
