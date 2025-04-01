@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Users } from "lucide-react";
 import VideoGallery from "@/components/VideoGallery";
 import { useAuth } from "@/contexts/AuthContext";
+import Link from "next/link";
 
 interface ChannelData {
   _id: string;
@@ -81,9 +82,9 @@ const MyChannelPage: React.FC = () => {
         const videosResponse = await fetch(`http://localhost:8000/api/v1/videos/cv/${encodeURIComponent(user.username)}`, {
           credentials: 'include',
         });
-        
+
         if (!videosResponse.ok) throw new Error("Failed to fetch videos");
-        
+
         const videosResult: VideosResponse = await videosResponse.json();
 
         if (videosResult.success) {
@@ -219,7 +220,7 @@ const MyChannelPage: React.FC = () => {
       </header>
 
       {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
         {/* Channel Banner */}
         <div
           className="w-full h-44 md:h-56 lg:h-64 bg-cover bg-center"
@@ -342,15 +343,17 @@ const MyChannelPage: React.FC = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                       {videos.map((video) => (
-                        <VideoGallery
-                          key={video._id}
-                          title={video.title}
-                          channelName={video.ownerName}
-                          views={`${formatViews(video.views)} views`}
-                          timeAgo={getTimeAgo(video.createdAt)}
-                          duration={video.duration}
-                          thumbnailUrl={video.thumbnail}
-                        />
+                        <Link key={video._id} href={`/videos/${video._id}`}>
+                          <VideoGallery
+                            key={video._id}
+                            title={video.title}
+                            channelName={video.ownerName}
+                            views={`${video.views.toLocaleString()} views`}
+                            timeAgo={getTimeAgo(video.createdAt)}
+                            duration={video.duration}
+                            thumbnailUrl={video.thumbnail}
+                          />
+                        </Link>
                       ))}
                     </div>
                   </>

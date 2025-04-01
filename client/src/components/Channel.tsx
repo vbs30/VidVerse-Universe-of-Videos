@@ -7,6 +7,7 @@ import { Bell, BellOff, ChevronDown, Users } from "lucide-react";
 import VideoGallery from "@/components/VideoGallery";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext"; // Import useAuth hook
+import Link from "next/link";
 
 interface ChannelData {
   _id: string;
@@ -301,7 +302,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
       </header>
 
       {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
         {/* Channel Banner */}
         <div
           className="w-full h-44 md:h-56 lg:h-64 bg-cover bg-center"
@@ -440,15 +441,17 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                       {videos.map((video) => (
+                        <Link key={video._id} href={`/videos/${video._id}`}>
                         <VideoGallery
                           key={video._id}
                           title={video.title}
                           channelName={video.ownerName}
-                          views={`${formatViews(video.views)} views`}
+                          views={`${video.views.toLocaleString()} views`}
                           timeAgo={getTimeAgo(video.createdAt)}
                           duration={video.duration}
                           thumbnailUrl={video.thumbnail}
                         />
+                      </Link>
                       ))}
                     </div>
                   </>

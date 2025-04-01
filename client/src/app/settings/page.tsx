@@ -147,7 +147,7 @@ const SettingsPage: React.FC = () => {
             </header>
 
             {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto bg-white dark:bg-black p-8">
+            <div className="flex-1 overflow-y-auto scrollbar-hide bg-white dark:bg-black p-8">
                 <div className="max-w-2xl mx-auto space-y-8">
                     {/* User Profile Section */}
                     <div className="bg-white dark:bg-black border dark:border-white/10 shadow-md rounded-xl p-6">

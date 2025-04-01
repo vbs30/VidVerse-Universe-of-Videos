@@ -152,7 +152,7 @@ const SubscriptionsPage = () => {
             </header>
 
             {/* Scrollable content area */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto scrollbar-hide">
                 <div className="container mx-auto py-4 px-4 sm:px-6 lg:px-8">
                     <p className="text-gray-600 dark:text-gray-400 mb-6">
                         You're subscribed to {subscriptions.countofChannels} channel{subscriptions.countofChannels !== 1 ? 's' : ''}

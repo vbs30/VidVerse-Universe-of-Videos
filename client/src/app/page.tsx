@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const categories: string[] = [
   "Music",
@@ -63,7 +64,7 @@ export const Home: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
-  
+
   const VIDEOS_PER_PAGE = 12;
 
   useEffect(() => {
@@ -95,14 +96,14 @@ export const Home: React.FC = () => {
   // Load more videos when category changes
   useEffect(() => {
     let filteredVideos = allVideos;
-    
+
     // In a real app, you'd implement category filtering on the backend
     // This is just a placeholder for frontend filtering
     if (selectedCategory) {
       // Simulate category filtering (replace with real implementation)
       // filteredVideos = allVideos.filter(video => video.category === selectedCategory);
     }
-    
+
     setDisplayedVideos(filteredVideos.slice(0, VIDEOS_PER_PAGE));
     setPage(1);
     setHasMore(filteredVideos.length > VIDEOS_PER_PAGE);
@@ -111,18 +112,18 @@ export const Home: React.FC = () => {
   // Handle loading more videos
   const loadMoreVideos = useCallback(() => {
     if (!hasMore || loading) return;
-    
+
     const nextPage = page + 1;
     const startIndex = (nextPage - 1) * VIDEOS_PER_PAGE;
     const endIndex = nextPage * VIDEOS_PER_PAGE;
-    
+
     let filteredVideos = allVideos;
     // Apply category filtering (would be better on backend)
     if (selectedCategory) {
       // Simulate filtering (replace with real implementation)
       // filteredVideos = allVideos.filter(video => video.category === selectedCategory);
     }
-    
+
     if (startIndex < filteredVideos.length) {
       const nextVideos = filteredVideos.slice(startIndex, endIndex);
       setDisplayedVideos(prev => [...prev, ...nextVideos]);
@@ -136,7 +137,7 @@ export const Home: React.FC = () => {
   // Intersection Observer for infinite scrolling
   useEffect(() => {
     if (loading) return;
-    
+
     observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore) {
@@ -145,11 +146,11 @@ export const Home: React.FC = () => {
       },
       { threshold: 0.1 }
     );
-    
+
     if (loadingRef.current) {
       observerRef.current.observe(loadingRef.current);
     }
-    
+
     return () => {
       if (observerRef.current) {
         observerRef.current.disconnect();
@@ -229,33 +230,35 @@ export const Home: React.FC = () => {
       {/* Video grid */}
       <div
         ref={containerRef}
-        className="w-full h-[calc(100vh-128px)] p-4 overflow-y-auto"
+        className="w-full h-[calc(100vh-128px)] p-4 overflow-y-auto scrollbar-hide"
       >
         <div className={`grid ${gridColumns} gap-4`}>
           {displayedVideos.length > 0 ? displayedVideos.map((video) => (
-            <VideoGallery
-              key={video._id}
-              title={video.title}
-              channelName={video.ownerName}
-              views={`${video.views.toLocaleString()} views`}
-              timeAgo={getTimeAgo(video.createdAt)}
-              duration={video.duration}
-              thumbnailUrl={video.thumbnail}
-            />
+            <Link key={video._id} href={`/videos/${video._id}`}>
+              <VideoGallery
+                key={video._id}
+                title={video.title}
+                channelName={video.ownerName}
+                views={`${video.views.toLocaleString()} views`}
+                timeAgo={getTimeAgo(video.createdAt)}
+                duration={video.duration}
+                thumbnailUrl={video.thumbnail}
+              />
+            </Link>
           )) : (
             <div className="col-span-full text-center py-10 text-gray-500">No videos found</div>
           )}
         </div>
-        
+
         {/* Loading indicator for infinite scroll */}
         {hasMore && (
-          <div 
-            ref={loadingRef} 
+          <div
+            ref={loadingRef}
             className="text-center py-4 mt-2"
           >
             {loading && page > 1 ? (
-              <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" 
-                   role="status">
+              <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]"
+                role="status">
                 <span className="sr-only">Loading...</span>
               </div>
             ) : (
