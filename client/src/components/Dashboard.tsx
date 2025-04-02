@@ -14,7 +14,8 @@ import {
   UserIcon,
   Settings,
   LogIn,
-  UserPlus
+  UserPlus,
+  ThumbsUp
 } from 'lucide-react';
 
 import {
@@ -65,6 +66,11 @@ export function Dashboard() {
       title: "Subscriptions",
       url: "/subscriptions",
       icon: Users,
+    },
+    {
+      title: "Liked Videos",
+      url: "/liked-videos",
+      icon: ThumbsUp,
     },
     {
       title: "Tweets Corner",

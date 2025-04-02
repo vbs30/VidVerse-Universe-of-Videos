@@ -61,7 +61,7 @@ const checkLikes = asyncHandler(async (req, res) => {
     }
 
     // Check if like exists for the video
-    const existingLike = await Like.findOne({ video: videoId, likedBy: userId });
+    const existingLike = await Like.find({ video: videoId, likedBy: userId });
 
     return res.status(200).json(
         new ApiResponse(200, { isLiked: !!existingLike, existingLike }, "Like status fetched")
@@ -75,7 +75,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     //Get user by id
     const userId = req.user?._id;
     //get documents where user id is present, this will indicate that user has liked that video
-    const likedVideos = await Like.find({ likedBy: userId }).populate("video");
+    const likedVideos = await Like.find({ likedBy: userId });
     //return response as all videos that are liked
     res.status(200).json(new ApiResponse(200, likedVideos, "Liked videos retrieved"));
 });
