@@ -3,7 +3,7 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.models.js"
 import { uploadToCloudinary, deletefromCloudinary } from "../utils/cloudinary.js"
 import jwt from "jsonwebtoken"
-import mongoose from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 
 //#region Code for Registering Users
 const registerUser = asyncHandler(async (req, res) => {
@@ -351,6 +351,32 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 })
 //#endregion
 
+//#region Code for getting user by id
+const getUserById = asyncHandler(async (req, res) => {
+    //get user id by url parameter
+    const { userId } = req.params
+
+    //check if user id is valid or not, if not then throw an error
+    if (!isValidObjectId(userId)) {
+        return res.status(400).json(new ApiResponse(401, [], "Invalid user id"))
+    }
+
+    //get user details by id, if user is not found then throw an error
+    const userDetails = await User.findById(userId).select("-password -refreshToken")
+
+    //if userDetails not fetched, means there is no user by the id, show error
+    if (!userDetails) {
+        return res.status(400).json(new ApiResponse(401, [], "User not found"))
+    }
+
+    //if user is found, send the response with user details
+    return res.status(200).json(
+        new ApiResponse(200, userDetails, "User details fetched successfully")
+    )
+
+})
+//#endregion
+
 //#region Get Watch History for user
 const getWatchHistory = asyncHandler(async (req, res) => {
     //Basically we will write a aggregate pipeline ( a query ) to get watch history.
@@ -360,9 +386,9 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     so in sub pipeline we are getting the details of that user who has published this video, and in main pipeline, when we get video information with it's owner,
     it gets saved in array of watch history, basically array of videos user has watched.
     */
-   const user = await User.aggregate([
-       {
-           //First step is we will match the id with current user (re.user?._id actually gives a string value, so to convert and get id we have taken the id in the form of ObjectID)
+    const user = await User.aggregate([
+        {
+            //First step is we will match the id with current user (re.user?._id actually gives a string value, so to convert and get id we have taken the id in the form of ObjectID)
             $match: {
                 _id: new mongoose.Types.ObjectId(req.user._id)
             }
@@ -445,5 +471,6 @@ export {
     updateUserAvatar,
     updateUserCoverImage,
     getUserChannelProfile,
+    getUserById,
     getWatchHistory
 }
