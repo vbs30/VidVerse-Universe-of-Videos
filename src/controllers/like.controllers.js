@@ -146,6 +146,47 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 });
 //#endregion
 
+//#region Code for getting count of likes for a comment
+const countofCommentLikes = asyncHandler(async (req, res) => {
+    const { commentId } = req.params;
+
+    // Check if video id is valid
+    if (!isValidObjectId(commentId)) {
+        return res.status(400).json(
+            new ApiResponse(400, { isLiked: false }, "Invalid comment id")
+        );
+    }
+
+    //if video id is valid, check whether this video really exists or not
+    const isCommentExisting = await Comment.findById(commentId)
+    if (!isCommentExisting) {
+        return res.status(400).json(new ApiResponse(401, [], "You cannot like this comment"))
+    }
+
+    //if video exists, then by finding the video id in likes collection, we can get the count of likes
+    const count = await Like.countDocuments({ comment: commentId });
+
+    //if count is not obtained or is null, return a response with 0 likes
+    if (!count) {
+        return res.status(200).json(new ApiResponse(200, { count: 0 }, "No likes found"));
+    }
+
+    //if count is obtained, return a response with count of likes
+    res.status(200).json(new ApiResponse(200, { count }, "Likes count retrieved"));
+})
+//#endregion
+
+//#region Code for getting tweets that are liked by user
+const getLikedTweets = asyncHandler(async (req, res) => {
+    //get user by id
+    const userId = req.user?._id;
+    //get documents where user id is present, this will indicate that user has liked that tweet
+    const likedTweets = await Like.find({ likedBy: userId }).populate("tweet");
+    //return response as all tweets that are liked
+    res.status(200).json(new ApiResponse(200, "Liked tweets retrieved", likedTweets));
+});
+//#endregion
+
 //#region Code for toggling tweet likes
 const toggleTweetLike = asyncHandler(async (req, res) => {
     //get tweet by id which user wants to like
@@ -181,17 +222,6 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 });
 //#endregion
 
-//#region Code for getting tweets that are liked by user
-const getLikedTweets = asyncHandler(async (req, res) => {
-    //get user by id
-    const userId = req.user?._id;
-    //get documents where user id is present, this will indicate that user has liked that tweet
-    const likedTweets = await Like.find({ likedBy: userId }).populate("tweet");
-    //return response as all tweets that are liked
-    res.status(200).json(new ApiResponse(200, "Liked tweets retrieved", likedTweets));
-});
-//#endregion
-
 //#region Code for getting comments that are liked by user
 const getLikedComments = asyncHandler(async (req, res) => {
     //get user by id
@@ -211,5 +241,6 @@ export {
     getLikedTweets,
     getLikedComments,
     checkLikes,
-    countofVideoLikes
+    countofVideoLikes,
+    countofCommentLikes
 };
