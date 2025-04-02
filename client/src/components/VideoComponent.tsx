@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { format } from 'date-fns'
 import { useAuth } from '@/contexts/AuthContext'
+import CommentSection from '@/components/CommentComponent';
 import {
     Accordion,
     AccordionContent,
@@ -526,9 +527,13 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
                     </Accordion>
 
                     {/* Comments Section */}
-                    <div className="border-t pt-6 mb-8">
+                    <div className="border-t pt-6 pb-8">
                         <h3 className="text-lg md:text-xl font-bold mb-4">Comments</h3>
-                        <p className="text-gray-500">Comments are disabled for this video</p>
+                        <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="border-t border-gray-200 dark:border-gray-800 mt-8 pt-8">
+                                <CommentSection videoId={videoid} />
+                            </div>
+                        </div>
                     </div>
                 </div>
 

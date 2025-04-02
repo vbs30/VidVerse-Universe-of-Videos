@@ -442,16 +442,16 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                       {videos.map((video) => (
                         <Link key={video._id} href={`/videos/${video._id}`}>
-                        <VideoGallery
-                          key={video._id}
-                          title={video.title}
-                          channelName={video.ownerName}
-                          views={`${video.views.toLocaleString()} views`}
-                          timeAgo={getTimeAgo(video.createdAt)}
-                          duration={video.duration}
-                          thumbnailUrl={video.thumbnail}
-                        />
-                      </Link>
+                          <VideoGallery
+                            key={video._id}
+                            title={video.title}
+                            channelName={video.ownerName}
+                            views={`${video.views.toLocaleString()} views`}
+                            timeAgo={getTimeAgo(video.createdAt)}
+                            duration={video.duration}
+                            thumbnailUrl={video.thumbnail}
+                          />
+                        </Link>
                       ))}
                     </div>
                   </>
