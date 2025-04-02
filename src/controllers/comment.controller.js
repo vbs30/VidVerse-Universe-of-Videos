@@ -5,33 +5,15 @@ import { Comment } from "../models/comments.models.js";
 
 //#region Code to get all comments that are present below a video from Comment collection
 const getVideoComments = asyncHandler(async (req, res) => {
-    // Get page and limit from query parameters, defaulting to page 1 and limit 10 if not provided
+    // Get videoid from url parameter
     const { videoId } = req.params
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 2;
 
-    // Options for pagination: current page, limit of documents per page, and sorting by title in ascending order
-    const options = {
-        page: page,
-        limit: limit,
-        sort: { title: 1 },
-    };
-
-    // Create an empty aggregate pipeline to fetch all comments for a video
-    const aggregate = Comment.aggregate([
-        {
-            $match: {
-                video: new mongoose.Types.ObjectId(videoId)
-            }
-        }
-    ]);
-
-    // Fetch paginated videos using the aggregate pipeline and options
-    const comments = await Comment.aggregatePaginate(aggregate, options);
+    // Fetch comment for particular videoId
+    const comments = await Comment.find({ video: videoId });
 
     // Check if videos were found, if not, throw an error
-    if (!comments.docs || comments.docs.length === 0) {
-        return res.status(400).json(new ApiResponse(401, [], "No comments found or an error occurred while fetching."))
+    if (!comments) {
+        return res.status(200).json(new ApiResponse(201, [], "No comments found or an error occurred while fetching."))
     }
 
     // Return successful response with the fetched videos
