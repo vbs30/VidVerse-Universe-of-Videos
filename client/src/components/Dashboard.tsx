@@ -87,7 +87,7 @@ export function Dashboard() {
     },
     {
       title: "Create Video",
-      url: "/channel/create",
+      url: "/create-video",
       icon: PlusCircle,
     },
     {

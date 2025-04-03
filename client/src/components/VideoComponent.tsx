@@ -401,7 +401,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
             {/* Main content area - flex column on mobile/tab, flex row on desktop */}
             <div className="flex flex-col lg:flex-row w-full overflow-y-auto flex-grow scrollbar-hide">
                 {/* Left section (video and details) */}
-                <div className="w-full lg:w-3/5 px-10 py-8">
+                <div className="w-full lg:w-3/5 lg:px-10 lg:py-8 md:px-4 md:py-4 sm:px-2 sm:py-2">
                     {/* Video Player Section */}
                     <div className="mb-6 rounded-lg overflow-hidden bg-black aspect-video relative">
                         {isAuthenticated ? (
