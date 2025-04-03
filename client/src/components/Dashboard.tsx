@@ -92,7 +92,7 @@ export function Dashboard() {
     },
     {
       title: "Manage Videos",
-      url: "/channel/manage",
+      url: "/manage-videos",
       icon: Edit,
     }
   ];
