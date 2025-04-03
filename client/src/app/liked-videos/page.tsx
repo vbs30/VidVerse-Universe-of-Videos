@@ -141,6 +141,7 @@ const LikedVideosPage: React.FC = () => {
                     const videoResponse = await fetch(`http://localhost:8000/api/v1/videos/v/${videoId}`, {
                         credentials: 'include',
                     });
+                    console.log(videoResponse)
 
                     if (!videoResponse.ok) {
                         console.error(`Failed to fetch video ${videoId}`);
@@ -297,7 +298,7 @@ const LikedVideosPage: React.FC = () => {
                                             <div className="mt-2 flex items-center">
                                                 <Link href={`/channel/${video.ownerName}`}>
                                                     <div className="flex items-center group">
-                                                        <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-700 flex-shrink-0 mr-2"></div>
+                                                        {/* <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-700 flex-shrink-0 mr-2"></div> */}
                                                         <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-red-600 dark:group-hover:text-red-500 transition-colors duration-200">
                                                             {video.ownerName}
                                                         </span>

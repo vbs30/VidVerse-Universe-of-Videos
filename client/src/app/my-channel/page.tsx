@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useEffect, useState } from "react";
+import { useAuth } from '@/contexts/AuthContext';
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Users } from "lucide-react";
 import VideoGallery from "@/components/VideoGallery";
-import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
 interface ChannelData {
@@ -18,6 +18,13 @@ interface ChannelData {
   createdAt: string;
   subscribersCount: number;
   channelSubscriptionCount: number;
+}
+
+interface ChannelResponse {
+  statusCode: number;
+  data: ChannelData;
+  message: string;
+  success: boolean;
 }
 
 interface Video {
@@ -65,20 +72,6 @@ const MyChannelPage: React.FC = () => {
       try {
         setLoading(true);
 
-        // Fetch channel info - Using the current user's data from context
-        setChannelData({
-          _id: user._id,
-          username: user.username,
-          email: user.email,
-          avatar: user.avatar,
-          coverImage: user.coverImage || "", // This might need to be added to your user object if not already present
-          fullName: user.fullName,
-          createdAt: new Date().toISOString(), // This might need to be added to your user object
-          subscribersCount: 0, // This will need to be fetched separately if not in user object
-          channelSubscriptionCount: 0 // This will need to be fetched separately if not in user object
-        });
-
-        // Fetch channel videos
         const videosResponse = await fetch(`http://localhost:8000/api/v1/videos/cv/${encodeURIComponent(user.username)}`, {
           credentials: 'include',
         });
@@ -94,24 +87,14 @@ const MyChannelPage: React.FC = () => {
           throw new Error(videosResult.message);
         }
 
-        // Optionally fetch additional user stats if not included in auth context
-        const statsResponse = await fetch(`http://localhost:8000/api/v1/users/stats`, {
-          credentials: 'include',
-        });
+        const channelResponse = await fetch(`http://localhost:8000/api/v1/users/c/${encodeURIComponent(user.username)}`);
+        if (!channelResponse.ok) throw new Error("Failed to fetch channel data");
 
-        if (statsResponse.ok) {
-          const statsResult = await statsResponse.json();
-          if (statsResult.success) {
-            setChannelData(prev => {
-              if (!prev) return prev;
-              return {
-                ...prev,
-                subscribersCount: statsResult.data.subscribersCount || 0,
-                channelSubscriptionCount: statsResult.data.channelSubscriptionCount || 0
-              };
-            });
-          }
-        }
+        const channelResult: ChannelResponse = await channelResponse.json();
+
+        if (!channelResult.success) throw new Error(channelResult.message || "Failed to load channel data");
+
+        setChannelData(channelResult.data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An unknown error occurred");
       } finally {
