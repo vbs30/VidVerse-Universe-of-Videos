@@ -401,7 +401,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
             {/* Main content area - flex column on mobile/tab, flex row on desktop */}
             <div className="flex flex-col lg:flex-row w-full overflow-y-auto flex-grow scrollbar-hide">
                 {/* Left section (video and details) */}
-                <div className="w-full lg:w-3/5 px-4 py-6">
+                <div className="w-full lg:w-3/5 px-10 py-8">
                     {/* Video Player Section */}
                     <div className="mb-6 rounded-lg overflow-hidden bg-black aspect-video relative">
                         {isAuthenticated ? (
@@ -539,7 +539,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
 
                 {/* Right section (desktop view) - remains hidden on mobile/tablet */}
                 <div className="hidden lg:block lg:w-2/5 overflow-y-auto pb-8 border-l pl-4 pr-4 scrollbar-hide">
-                    <div className="py-4 px-2">
+                    <div className="py-6 px-6">
                         <h3 className="text-lg font-bold mb-4">More from {channel?.fullName || channel?.username}</h3>
 
                         {loadingRecommended ? (

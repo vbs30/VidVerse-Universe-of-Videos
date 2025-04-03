@@ -20,7 +20,7 @@ const VideoGallery: React.FC<VideoCardProps> = ({
     thumbnailUrl
 }) => {
     return (
-        <div className="group overflow-hidden rounded-xl transition-all duration-200 hover:shadow-md">
+        <div className="group overflow-hidden rounded-xl transition-all duration-200 hover:shadow-md pb-4">
             {/* Thumbnail container - outside the Card component */}
             <div className="relative aspect-video overflow-hidden">
                 <img
