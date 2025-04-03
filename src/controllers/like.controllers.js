@@ -146,6 +146,33 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 });
 //#endregion
 
+//#region Code to check whether current user has liked a particular comment or not, for persisting data in frontend
+const checkLikesforComment = asyncHandler(async (req, res) => {
+    const { commentId } = req.params;
+    const userId = req.user?._id;
+
+    // Check if video id is valid
+    if (!isValidObjectId(commentId)) {
+        return res.status(400).json(
+            new ApiResponse(400, { isLiked: false }, "Invalid comment id")
+        );
+    }
+
+    //if video id is valid, check whether this video really exists or not
+    const isCommentExisting = await Comment.findById(commentId)
+    if (!isCommentExisting) {
+        return res.status(400).json(new ApiResponse(401, [], "You cannot like this Comment"))
+    }
+
+    // Check if like exists for the comment
+    const existingLike = await Like.find({ comment: commentId, likedBy: userId });
+
+    return res.status(200).json(
+        new ApiResponse(200, { isLiked: !!existingLike, existingLike }, "Like status fetched")
+    );
+});
+//#endregion
+
 //#region Code for getting count of likes for a comment
 const countofCommentLikes = asyncHandler(async (req, res) => {
     const { commentId } = req.params;
@@ -241,6 +268,7 @@ export {
     getLikedTweets,
     getLikedComments,
     checkLikes,
+    checkLikesforComment,
     countofVideoLikes,
     countofCommentLikes
 };
