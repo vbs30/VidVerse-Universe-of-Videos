@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { MoreVertical, Trash2, Edit, Send, ChevronUp, ChevronDown } from 'lucide-react';
+import { MoreVertical, Trash2, Edit, Send, ChevronUp, ChevronDown, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
@@ -28,6 +28,8 @@ interface Comment {
     createdAt: string;
     updatedAt: string;
     ownerDetails?: UserProfile;
+    likeCount?: number;
+    isLiked?: boolean;
 }
 
 interface CommentSectionProps {
@@ -45,12 +47,17 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
     const [expandedMenuId, setExpandedMenuId] = useState<string | null>(null);
     const [showAllComments, setShowAllComments] = useState(true);
     const [commentCount, setCommentCount] = useState(0);
+    const [likeStates, setLikeStates] = useState<{ [key: string]: boolean }>({});
+    const [likeCounts, setLikeCounts] = useState<{ [key: string]: number }>({});
+    const [isLiking, setIsLiking] = useState<{ [key: string]: boolean }>({});
     const menuRef = useRef<HTMLDivElement>(null);
     const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
-    // Fetch comments when component mounts or videoId changes
+    // Fetch comments when component mounts or videoId changes or when authentication status changes
     useEffect(() => {
-        fetchComments();
+        if (videoId) {
+            fetchComments();
+        }
 
         // Add click outside handler for dropdown menu
         const handleClickOutside = (event: MouseEvent) => {
@@ -61,7 +68,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [videoId]);
+    }, [videoId, isAuthenticated]); // Added isAuthenticated as dependency
 
     // Focus on textarea when editing starts
     useEffect(() => {
@@ -91,11 +98,63 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
         }
     };
 
+    // Check if user has liked a comment
+    const checkCommentLikeStatus = async (commentId: string) => {
+        if (!isAuthenticated) return false;
+
+        try {
+            const response = await fetch(`http://localhost:8000/api/v1/likes/check-comment-likes/${commentId}`, {
+                credentials: 'include', // Important to include credentials
+                cache: 'no-store', // Prevent caching to always get fresh data
+                headers: {
+                    'Cache-Control': 'no-cache' // Additional cache control
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to check like status');
+            }
+
+            const data = await response.json();
+            return data.success && data.data ? data.data.isLiked : false;
+        } catch (err) {
+            console.error('Error checking comment like status:', err);
+            return false;
+        }
+    };
+
+    // Get comment like count
+    const getCommentLikeCount = async (commentId: string) => {
+        try {
+            const response = await fetch(`http://localhost:8000/api/v1/likes/countComment/${commentId}`, {
+                cache: 'no-store', // Prevent caching
+                headers: {
+                    'Cache-Control': 'no-cache' // Additional cache control
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to get like count');
+            }
+
+            const data = await response.json();
+            return data.success && data.data ? data.data.count : 0;
+        } catch (err) {
+            console.error('Error getting comment like count:', err);
+            return 0;
+        }
+    };
+
     // Fetch comments from API and enrich with user profile data
     const fetchComments = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`http://localhost:8000/api/v1/comments/c/${videoId}`);
+            const response = await fetch(`http://localhost:8000/api/v1/comments/c/${videoId}`, {
+                cache: 'no-store', // Prevent caching
+                headers: {
+                    'Cache-Control': 'no-cache' // Additional cache control
+                }
+            });
 
             if (!response.ok) {
                 throw new Error('Failed to fetch comments');
@@ -105,27 +164,46 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
 
             if (data.success) {
                 const commentsData = data.data;
+                const newLikeStates: { [key: string]: boolean } = {};
+                const newLikeCounts: { [key: string]: number } = {};
+
                 const enrichedComments = await Promise.all(
                     commentsData.map(async (comment: Comment) => {
                         // If owner is a string (just the ID), fetch user details
+                        let updatedComment = { ...comment };
+
                         if (typeof comment.owner === 'string') {
                             const userProfile = await fetchUserProfile(comment.owner);
                             if (userProfile) {
-                                return {
-                                    ...comment,
-                                    ownerDetails: userProfile
-                                };
+                                updatedComment.ownerDetails = userProfile;
                             }
                         }
-                        return comment;
+
+                        // Get like count for the comment
+                        const likeCount = await getCommentLikeCount(comment._id);
+                        updatedComment.likeCount = likeCount;
+                        newLikeCounts[comment._id] = likeCount;
+
+                        // Check if authenticated user has liked the comment
+                        if (isAuthenticated) {
+                            const isLiked = await checkCommentLikeStatus(comment._id);
+                            updatedComment.isLiked = isLiked;
+                            newLikeStates[comment._id] = isLiked;
+                        }
+
+                        return updatedComment;
                     })
                 );
 
                 setComments(enrichedComments);
                 setCommentCount(enrichedComments.length);
+                setLikeStates(newLikeStates);
+                setLikeCounts(newLikeCounts);
             } else {
                 setComments([]);
                 setCommentCount(0);
+                setLikeStates({});
+                setLikeCounts({});
             }
         } catch (err) {
             console.error('Error fetching comments:', err);
@@ -230,6 +308,103 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
         } catch (err) {
             console.error('Error deleting comment:', err);
             toast.error('Failed to delete comment. Please try again.');
+        }
+    };
+
+    // Handle like/unlike comment with forced update
+    const handleToggleLike = async (commentId: string) => {
+        if (!isAuthenticated) {
+            toast.error('Please log in to like comments');
+            return;
+        }
+
+        // If already processing a like action for this comment, return
+        if (isLiking[commentId]) return;
+
+        // Set up optimistic UI update
+        const currentLiked = likeStates[commentId] || false;
+        const currentCount = likeCounts[commentId] || 0;
+
+        // Update local state immediately (optimistic update)
+        setLikeStates(prev => ({
+            ...prev,
+            [commentId]: !currentLiked
+        }));
+
+        setLikeCounts(prev => ({
+            ...prev,
+            [commentId]: !currentLiked ? currentCount + 1 : Math.max(currentCount - 1, 0)
+        }));
+
+        // Mark this comment as being processed
+        setIsLiking(prev => ({
+            ...prev,
+            [commentId]: true
+        }));
+
+        try {
+            // Use no-cache to prevent any caching issues
+            const response = await fetch(`http://localhost:8000/api/v1/likes/toggle/c/${commentId}`, {
+                method: 'POST',
+                credentials: 'include',
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Instead of relying on the optimistic update, verify the actual state
+                // This ensures we have the correct state from the server
+                const verifiedLikeStatus = await checkCommentLikeStatus(commentId);
+                const verifiedLikeCount = await getCommentLikeCount(commentId);
+
+                setLikeStates(prev => ({
+                    ...prev,
+                    [commentId]: verifiedLikeStatus
+                }));
+
+                setLikeCounts(prev => ({
+                    ...prev,
+                    [commentId]: verifiedLikeCount
+                }));
+            } else {
+                // Revert the optimistic update if the API call fails
+                setLikeStates(prev => ({
+                    ...prev,
+                    [commentId]: currentLiked
+                }));
+
+                setLikeCounts(prev => ({
+                    ...prev,
+                    [commentId]: currentCount
+                }));
+
+                toast.error(data.message || 'Failed to update like status');
+            }
+        } catch (err) {
+            console.error('Error toggling like:', err);
+
+            // Revert the optimistic update if there's an error
+            setLikeStates(prev => ({
+                ...prev,
+                [commentId]: currentLiked
+            }));
+
+            setLikeCounts(prev => ({
+                ...prev,
+                [commentId]: currentCount
+            }));
+
+            toast.error('Failed to update like status. Please try again.');
+        } finally {
+            // Mark this comment as no longer being processed
+            setIsLiking(prev => ({
+                ...prev,
+                [commentId]: false
+            }));
         }
     };
 
@@ -394,6 +569,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
                     ) : (
                         comments.map((comment) => {
                             const ownerInfo = getCommentOwnerInfo(comment);
+                            const isCommentLiked = likeStates[comment._id] !== undefined
+                                ? likeStates[comment._id]
+                                : comment.isLiked || false;
+                            const commentLikeCount = likeCounts[comment._id] !== undefined
+                                ? likeCounts[comment._id]
+                                : comment.likeCount || 0;
+
                             return (
                                 <div key={comment._id} className="flex gap-3 group">
                                     {/* User Avatar - Link to channel */}
@@ -487,9 +669,30 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <p className="mt-1 text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
-                                                {comment.content}
-                                            </p>
+                                            <div>
+                                                <p className="mt-1 text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
+                                                    {comment.content}
+                                                </p>
+
+                                                {/* Like button and count - Updated to use likeStates */}
+                                                <div className="mt-2 flex items-center">
+                                                    <button
+                                                        onClick={() => handleToggleLike(comment._id)}
+                                                        disabled={isLiking[comment._id]}
+                                                        className={`flex items-center gap-1 px-2 py-1 rounded-full text-sm ${isCommentLiked
+                                                                ? 'text-neutral-800 dark:text-white'
+                                                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                                            } transition-colors ${isLiking[comment._id] ? 'opacity-50 cursor-not-allowed' : ''
+                                                            }`}
+                                                    >
+                                                        <ThumbsUp
+                                                            size={16}
+                                                            className={isCommentLiked ? 'fill-neutral-800 dark:fill-white' : 'fill-white dark:fill-neutral-800'}
+                                                        />
+                                                        <span>{commentLikeCount}</span>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
