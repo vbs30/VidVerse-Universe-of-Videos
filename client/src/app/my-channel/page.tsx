@@ -53,7 +53,7 @@ interface VideosResponse {
 }
 
 const MyChannelPage: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, checkAuth } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [channelData, setChannelData] = useState<ChannelData | null>(null);
@@ -61,10 +61,19 @@ const MyChannelPage: React.FC = () => {
   const [totalVideos, setTotalVideos] = useState(0);
   const [activeTab, setActiveTab] = useState("videos");
 
+  // First check authentication status when component mounts
+  useEffect(() => {
+    const validateAuth = async () => {
+      await checkAuth();
+    };
+
+    validateAuth();
+  }, [checkAuth]);
+
+  // Then fetch data once authentication is confirmed
   useEffect(() => {
     const fetchData = async () => {
       if (!isAuthenticated || !user) {
-        setError("Please login to view your channel");
         setLoading(false);
         return;
       }
@@ -87,7 +96,10 @@ const MyChannelPage: React.FC = () => {
           throw new Error(videosResult.message);
         }
 
-        const channelResponse = await fetch(`http://localhost:8000/api/v1/users/c/${encodeURIComponent(user.username)}`);
+        const channelResponse = await fetch(`http://localhost:8000/api/v1/users/c/${encodeURIComponent(user.username)}`, {
+          credentials: 'include', // Add credentials here too
+        });
+
         if (!channelResponse.ok) throw new Error("Failed to fetch channel data");
 
         const channelResult: ChannelResponse = await channelResponse.json();
@@ -270,7 +282,7 @@ const MyChannelPage: React.FC = () => {
                 {/* Edit Channel Button */}
                 <div className="flex items-center gap-2 mt-4 md:mt-0">
                   <button
-                    onClick={() => window.location.href = '/edit-channel'} // Adjust to your edit channel route
+                    onClick={() => window.location.href = '/settings'} // Adjust to your edit channel route
                     className="flex items-center gap-1.5 px-4 py-2.5 rounded-full font-medium transition-colors duration-200 
                     bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
                   >
