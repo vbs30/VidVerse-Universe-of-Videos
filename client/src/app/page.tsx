@@ -198,6 +198,13 @@ export const Home: React.FC = () => {
     return `${Math.floor(diffInDays / 365)} years ago`;
   };
 
+      // Format view count
+      const formatViews = (views: number): string => {
+        if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`
+        if (views >= 1000) return `${(views / 1000).toFixed(1)}K`
+        return views.toString()
+    }
+
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category === selectedCategory ? null : category);
   };
@@ -239,7 +246,7 @@ export const Home: React.FC = () => {
                 key={video._id}
                 title={video.title}
                 channelName={video.ownerName}
-                views={`${video.views.toLocaleString()} views`}
+                views={`${formatViews(Number(video.views))} views`}
                 timeAgo={getTimeAgo(video.createdAt)}
                 duration={video.duration}
                 thumbnailUrl={video.thumbnail}

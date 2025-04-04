@@ -191,6 +191,13 @@ const ManageVideos = () => {
         setShowDeleteDialog(true);
     };
 
+    // Format view count
+    const formatViews = (views: number): string => {
+        if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
+        if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
+        return views.toString();
+    };
+
     // Handle video deletion
     const handleDeleteVideo = async () => {
         if (!isAuthenticated || !videoToDelete) return;
@@ -297,7 +304,7 @@ const ManageVideos = () => {
                                                 <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-4">
                                                     <span>{new Date(video.createdAt).toLocaleDateString()}</span>
                                                     <span className="mx-2">•</span>
-                                                    <span>{video.views} views</span>
+                                                    <span>{formatViews(Number(video.views))} views</span>
                                                 </div>
                                             </div>
 

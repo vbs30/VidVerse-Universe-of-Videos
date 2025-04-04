@@ -512,7 +512,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm">
                                     <div className="flex items-center gap-2">
                                         <Eye size={16} />
-                                        <span>{video?.views.toLocaleString()} views</span>
+                                        <span>{formatViews(Number(video?.views))} views</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Clock size={16} />
@@ -556,7 +556,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
                                             key={video._id}
                                             title={video.title}
                                             channelName={video.ownerName}
-                                            views={`${video.views.toLocaleString()} views`}
+                                            views={`${formatViews(Number(video.views))} views`}
                                             timeAgo={getTimeAgo(video.createdAt)}
                                             duration={video.duration}
                                             thumbnailUrl={video.thumbnail}

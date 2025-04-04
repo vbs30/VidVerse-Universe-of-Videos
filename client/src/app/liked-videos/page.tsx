@@ -290,7 +290,7 @@ const LikedVideosPage: React.FC = () => {
                                             </Link>
 
                                             <div className="mt-1 flex items-center text-sm text-gray-600 dark:text-gray-400">
-                                                <span>{formatViews(video.views)} views</span>
+                                                <span>{formatViews(Number(video.views))} views</span>
                                                 <span className="mx-1">•</span>
                                                 <span>{getTimeAgo(video.createdAt)}</span>
                                             </div>

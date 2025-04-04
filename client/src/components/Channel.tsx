@@ -446,7 +446,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
                             key={video._id}
                             title={video.title}
                             channelName={video.ownerName}
-                            views={`${video.views.toLocaleString()} views`}
+                            views={`${formatViews(Number(video.views))} views`}
                             timeAgo={getTimeAgo(video.createdAt)}
                             duration={video.duration}
                             thumbnailUrl={video.thumbnail}
