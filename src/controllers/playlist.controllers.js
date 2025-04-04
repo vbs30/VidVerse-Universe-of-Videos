@@ -39,13 +39,48 @@ const createPlaylist = asyncHandler(async (req, res) => {
 //#region Code for fetching particular User's playlists
 const getUserPlaylist = asyncHandler(async (req, res) => {
     //get current user's id
-    const { userId } = req.user?._id
+    const userId  = req.user?._id
 
-    //get document where owner is this current user, can be multiple documents too
-    const playlistDetails = await Playlist.find(userId)
+    //if userId is valid, find it in Playlist collection and get playlist details with entire video details
+    const playlistDetails = await Playlist.aggregate([
+        {
+            // Match playlists where the owner is the given userId
+            $match: {
+                owner: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            // Lookup video details from the Video collection
+            $lookup: {
+                from: "videos",
+                localField: "videos",
+                foreignField: "_id",
+                as: "video_details"
+            }
+        },
+        {
+            // Add a field to count the number of videos
+            $addFields: {
+                videoCount: { $size: "$video_details" }
+            }
+        },
+        {
+            // Select only the required fields
+            $project: {
+                _id: 1,
+                name: 1,
+                description: 1,
+                owner: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                videoCount: 1,
+                video_details: 1
+            }
+        }
+    ]);
 
     if (!playlistDetails) {
-        return res.status(400).json(new ApiResponse(401, [], "No playlist found for this user"))
+        return res.status(200).json(new ApiResponse(201, [], "No playlist found for this user"))
     }
 
     return res.status(201).json(
@@ -106,7 +141,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
 
     //check if playlist details are fetched or not
     if (!playlistDetails) {
-        return res.status(400).json(new ApiResponse(401, [], "Playlist not found"))
+        return res.status(200).json(new ApiResponse(201, [], "Playlist not found"))
     }
 
     //return a response if playlist details are found
