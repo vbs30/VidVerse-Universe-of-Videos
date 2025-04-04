@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
-import { Menu, Search, Sun, Moon, X, User, MonitorPause, LogOut, UserRoundCog } from 'lucide-react';
+import { Menu, Sun, Moon, X, LogOut, UserRoundCog, MonitorPause } from 'lucide-react';
 import Link from 'next/link';
 import { SignUpBox } from './SignupBox';
 import { LoginBox } from './LoginBox';
 import { useAuth } from '@/contexts/AuthContext';
+import { SearchComponent } from './SearchComponent';
 
 export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
 
     const { theme, setTheme } = useTheme();
@@ -21,19 +21,15 @@ export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
 
     const toggleTheme = () => setTheme(isDarkTheme ? 'light' : 'dark');
 
-    const searchRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    // Close dropdowns when clicking outside
+    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-                setIsSearchOpen(false);
-            }
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setIsMenuOpen(false);
             }
@@ -141,14 +137,7 @@ export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
 
                 {/* Desktop Search */}
                 <div className="hidden md:flex justify-center flex-1">
-                    <div className={`flex items-center w-full max-w-md mx-auto px-2 rounded-lg border ${isDarkTheme ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-100'}`}>
-                        <input
-                            type="text"
-                            placeholder="Search..."
-                            className={`w-full p-2 outline-none ${isDarkTheme ? 'bg-gray-800 placeholder-gray-500' : 'bg-gray-100 placeholder-gray-500'}`}
-                        />
-                        <Search size={18} className="mx-2 text-gray-500" />
-                    </div>
+                    <SearchComponent isDarkTheme={isDarkTheme} />
                 </div>
 
                 {/* Desktop Buttons */}
@@ -159,20 +148,7 @@ export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
                 {/* Mobile View Icons */}
                 <div className="flex md:hidden items-center gap-4 relative">
                     {/* Search Icon */}
-                    <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                        <Search size={20} />
-                    </button>
-
-                    {/* Search Dropdown - Only Takes Right Side */}
-                    {isSearchOpen && (
-                        <div ref={searchRef} className="absolute top-12 right-12 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg p-2 w-60">
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                className="w-full p-2 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 text-black dark:text-white"
-                            />
-                        </div>
-                    )}
+                    <SearchComponent isDarkTheme={isDarkTheme} isMobile={true} />
 
                     {/* Hamburger Menu */}
                     <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
