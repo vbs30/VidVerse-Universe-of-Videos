@@ -205,4 +205,19 @@ const checkSubscription = asyncHandler(async (req, res) => {
 });
 //#endregion
 
-export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels, checkSubscription }
+//#region Code to get all channels for search optimization
+const getAllChannels = asyncHandler(async (req, res) => {
+    // Get all channels (username and their id) from the database
+    const allChannels = await User.find({})
+
+    //If channels not found by db, just send an error
+    if(!allChannels){
+        return res.status(400).json(new ApiResponse(401, [], "No channels found, Something went wrong"))
+    }
+
+    //If channels found, then send the channels as response
+    return res.status(201).json(new ApiResponse(200, allChannels, "Successfully fetched all channels"))
+})
+//#endregion
+
+export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels, checkSubscription, getAllChannels }
