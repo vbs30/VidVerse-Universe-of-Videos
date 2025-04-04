@@ -49,60 +49,6 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 })
 //#endregion
 
-//#region Code to get count of subscribers of a channel
-const getUserChannelSubscribers = asyncHandler(async (req, res) => {
-    //getting count of subscribers a channel has
-    //first of all we will get the channel name (user's channel name) as input to search and return count of subscribers of that channel
-    const { channelName } = req.params
-    if (!channelName.trim()) {
-        return res.status(400).json(new ApiResponse(401, [], "Invalid channel name"))
-    }
-
-    //bug2: when $match does not find a match, it does not throw an error instead returns an empty array
-    //fix: simply check if countOfSubscribers has data or not, and manually throw an error if nothing matches and empty array is returned.
-    const countOfSubscribers = await User.aggregate([
-        {
-            //We will match the searched or given username with the one in database, if username is present then further work
-            $match: {
-                username: channelName?.toLowerCase()
-            }
-        },
-        {
-            // we will join Users with Subscription by Users._id = Subscription.channelSubscribed
-            $lookup: {
-                from: "subscriptions",
-                localField: "_id",
-                foreignField: "channelSubscribed",
-                as: "subscribers"
-            }
-        },
-        {
-            //now we will make a new variable or add a field which will count the subscribers and store the value in this new field
-            $addFields: {
-                subscribersCount: {
-                    $size: "$subscribers"
-                }
-            }
-        },
-        {
-            //we will project or return the fields which we want to display or see as results
-            $project: {
-                subscribersCount: 1
-            }
-        }
-    ])
-
-    if(countOfSubscribers.length === 0){
-        return res.status(400).json(new ApiResponse(401, [], "Channel profile you wish to see does not exist"))
-    }
-
-    //return the number of subscribers a channel has as a response
-    return res.status(201).json(
-        new ApiResponse(200, countOfSubscribers, "Successfully fetched count of subscribers")
-    )
-})
-//#endregion
-
 //#region Code for getting how many channels and which channels has user subscribed to
 const getSubscribedChannels = asyncHandler(async (req, res) => {
     //getting count of how many channels has user subscribed
@@ -220,4 +166,4 @@ const getAllChannels = asyncHandler(async (req, res) => {
 })
 //#endregion
 
-export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels, checkSubscription, getAllChannels }
+export { toggleSubscription, getSubscribedChannels, checkSubscription, getAllChannels }
