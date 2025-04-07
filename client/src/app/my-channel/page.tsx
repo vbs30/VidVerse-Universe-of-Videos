@@ -6,6 +6,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Users } from "lucide-react";
 import VideoGallery from "@/components/VideoGallery";
+import PlaylistComponent from "@/components/PlaylistComponent";
 import Link from "next/link";
 
 interface ChannelData {
@@ -375,23 +376,7 @@ const MyChannelPage: React.FC = () => {
             )}
 
             {activeTab === "playlists" && (
-              <div className="py-16 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-8 h-8">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-medium text-gray-900 dark:text-white">No playlists</h3>
-                <p className="mt-2 text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                  You haven't created any playlists yet.
-                </p>
-                <button
-                  onClick={() => window.location.href = '/create-playlist'} // Adjust to your create playlist route
-                  className="mt-6 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors duration-200"
-                >
-                  Create a playlist
-                </button>
-              </div>
+              <PlaylistComponent />
             )}
 
             {activeTab === "about" && (

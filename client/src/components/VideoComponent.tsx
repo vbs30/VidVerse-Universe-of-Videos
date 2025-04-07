@@ -10,6 +10,16 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '@/components/ui/accordion'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Avatar } from '@/components/ui/avatar'
@@ -53,6 +63,15 @@ interface VideoComponentProps {
     videoid: string
 }
 
+// Playlist interface
+interface Playlist {
+    _id: string
+    name: string
+    description: string
+    owner: string
+    videoCount: number
+}
+
 export default function VideoComponent({ videoid }: VideoComponentProps) {
     const { isAuthenticated, user } = useAuth()
     const [video, setVideo] = useState<Video | null>(null)
@@ -66,6 +85,10 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
     const [isSubscribed, setIsSubscribed] = useState(false)
     const [recommendedVideos, setRecommendedVideos] = useState<Video[]>([])
     const [loadingRecommended, setLoadingRecommended] = useState(false)
+    const [playlists, setPlaylists] = useState<Playlist[]>([])
+    const [loadingPlaylists, setLoadingPlaylists] = useState(false)
+    const [savingToPlaylist, setSavingToPlaylist] = useState(false)
+    const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false)
 
     // Fetch video data
     useEffect(() => {
@@ -204,6 +227,64 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
             }
         } catch (err) {
             console.error('Error checking like status:', err)
+        }
+    }
+
+    // Fetch user playlists
+    const fetchUserPlaylists = async () => {
+        if (!isAuthenticated) {
+            toast.error("Please log in to access playlists")
+            return
+        }
+
+        try {
+            setLoadingPlaylists(true)
+            const response = await fetch("http://localhost:8000/api/v1/playlist/get-user-playlist", {
+                credentials: 'include',
+            })
+
+            const result = await response.json()
+
+            if (result.success) {
+                setPlaylists(result.data)
+            } else {
+                toast.error(result.message || "Failed to load playlists")
+            }
+        } catch (err) {
+            console.error("Error fetching playlists:", err)
+            toast.error("Error loading playlists. Please try again.")
+        } finally {
+            setLoadingPlaylists(false)
+        }
+    }
+
+    // Add video to playlist
+    const addVideoToPlaylist = async (playlistId: string) => {
+        if (!isAuthenticated || !video) {
+            toast.error("Please log in to save videos")
+            return
+        }
+
+        try {
+            setSavingToPlaylist(true)
+            const response = await fetch(`http://localhost:8000/api/v1/playlist/add/${video._id}/${playlistId}`, {
+                method: 'PATCH',
+                credentials: 'include',
+            })
+
+            const result = await response.json()
+
+            if (result.success) {
+                toast.success(result.message || "Video added to playlist")
+                setIsPlaylistDialogOpen(false)
+            } else {
+                toast.error(result.message || "Failed to add video to playlist")
+            }
+        } catch (err) {
+            console.error("Error adding to playlist:", err)
+            toast.error("Error saving video. Please try again.")
+        } finally {
+            setSavingToPlaylist(false)
         }
     }
 
@@ -401,7 +482,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
             {/* Main content area - flex column on mobile/tab, flex row on desktop */}
             <div className="flex flex-col lg:flex-row w-full overflow-y-auto flex-grow scrollbar-hide">
                 {/* Left section (video and details) */}
-                <div className="w-full lg:w-3/5 lg:px-10 lg:py-8 md:px-4 md:py-4 sm:px-2 sm:py-2">
+                <div className="w-full lg:w-3/5 lg:px-10 lg:py-8 md:px-4 md:py-4">
                     {/* Video Player Section */}
                     <div className="mb-6 rounded-lg overflow-hidden bg-black aspect-video relative">
                         {isAuthenticated ? (
@@ -501,6 +582,38 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
                             >
                                 <Download size={16} />
                                 <span className="hidden sm:inline">Download</span>
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                className="flex items-center gap-2"
+                                onClick={() => {
+                                    if (!isAuthenticated) {
+                                        toast.error("Please log in to save videos")
+                                        return
+                                    }
+                                    fetchUserPlaylists()
+                                    setIsPlaylistDialogOpen(true)
+                                }}
+                                disabled={!isAuthenticated}
+                                size="sm"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                    <polyline points="7 3 7 8 15 8"></polyline>
+                                </svg>
+                                <span className="hidden sm:inline">Save</span>
                             </Button>
                         </div>
                     </div>
@@ -615,6 +728,121 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
                     )}
                 </div>
             </div>
+
+            {/* Playlist Dialog */}
+            <AlertDialog open={isPlaylistDialogOpen} onOpenChange={setIsPlaylistDialogOpen}>
+                <AlertDialogContent className="sm:max-w-md max-w-[80vw]">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-xl font-bold">Save to Playlist</AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm text-gray-500 dark:text-gray-400">
+                            Select a playlist to add this video to your collection
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <div className="my-6">
+                        {loadingPlaylists ? (
+                            <div className="space-y-3 py-2">
+                                <Skeleton className="h-14 w-full rounded-md" />
+                                <Skeleton className="h-14 w-full rounded-md" />
+                                <Skeleton className="h-14 w-full rounded-md" />
+                            </div>
+                        ) : playlists.length > 0 ? (
+                            <div className="max-h-[280px] overflow-y-auto space-y-2.5">
+                                {playlists.map((playlist) => (
+                                    <div
+                                        key={playlist._id}
+                                        onClick={() => !savingToPlaylist && addVideoToPlaylist(playlist._id)}
+                                        className="p-3.5 border dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 
+                                      transition-colors duration-150 cursor-pointer flex justify-between items-center
+                                      group shadow-sm hover:shadow-md gap-3"
+                                    >
+                                        <div className="flex items-center space-x-3">
+                                            <div className="flex-shrink-0 w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-md flex items-center justify-center">
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="18"
+                                                    height="18"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    className="text-gray-500 dark:text-gray-400"
+                                                >
+                                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                                    <polyline points="7 3 7 8 15 8"></polyline>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p className="font-medium">{playlist.name}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                    {playlist.videoCount} {playlist.videoCount === 1 ? 'video' : 'videos'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full 
+                                          bg-gray-100 dark:bg-gray-800 group-hover:bg-white dark:group-hover:bg-gray-700 
+                                          transition-colors duration-150">
+                                            {savingToPlaylist ? (
+                                                <div className="w-4 h-4 border-2 border-gray-500 border-r-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="18"
+                                                    height="18"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    className="text-gray-600 dark:text-gray-300"
+                                                >
+                                                    <path d="M12 5v14M5 12h14" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-10 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <div className="inline-flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-gray-100 dark:bg-gray-700">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="text-gray-500 dark:text-gray-400"
+                                    >
+                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                        <polyline points="7 3 7 8 15 8"></polyline>
+                                    </svg>
+                                </div>
+                                <p className="text-gray-600 dark:text-gray-300 font-medium mb-1">No playlists found</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Create a playlist first to save videos</p>
+                            </div>
+                        )}
+                    </div>
+
+                    <AlertDialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+                        <AlertDialogCancel
+                            disabled={savingToPlaylist}
+                            className="mt-3 sm:mt-0 border border-gray-300 dark:border-gray-700"
+                        >
+                            Cancel
+                        </AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

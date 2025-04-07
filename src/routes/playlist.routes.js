@@ -11,6 +11,6 @@ router.route("/get-user-playlist").get(getUserPlaylist)
 router.route("/p/:playlistId").get(getPlaylistById).delete(deletePlaylistById).patch(updatePlaylistById)
 
 router.route("/add/:videoId/:playlistId").patch(addVideosToPlaylist)
-router.route("/remove/:videoId/:playlistId").patch(removeVideosFromPlaylist)
+router.route("/remove/:videoId/:playlistId").delete(removeVideosFromPlaylist)
 
 export default router
