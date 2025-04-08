@@ -107,7 +107,6 @@ const updateView = asyncHandler(async (req, res) => {
 
     // Check if the user is logged in (userId available in req.user)
     const userId = req.user?._id;
-    console.log("userId", userId)
     if (userId) {
         // Fetch user details from the database
         const user = await User.findById(userId);

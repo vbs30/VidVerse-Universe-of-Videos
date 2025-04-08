@@ -105,7 +105,7 @@ export default function SearchPage() {
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-6">Search Results for "{query}"</h1>
+                <h1 className="text-2xl font-bold mb-6">Search Results for "{query}"</h1>
 
                 {isLoading ? (
                     <div className="flex items-center justify-center p-12">
@@ -134,7 +134,7 @@ export default function SearchPage() {
                             </Tab>
                         </TabList>
 
-                        <div className="overflow-y-auto max-h-screen pb-10">
+                        <div className="overflow-y-auto scrollbar-hide max-h-[calc(100vh-100px)] pb-16">
                             <TabPanel>
                                 {videos.length === 0 && channels.length === 0 ? (
                                     <div className="text-center p-8 bg-gray-100 dark:bg-gray-800 rounded-lg">
@@ -164,7 +164,7 @@ export default function SearchPage() {
                                         )}
 
                                         {videos.length > 0 && (
-                                            <div>
+                                            <div className="mb-10">
                                                 <h2 className="text-2xl font-bold mb-4">Videos</h2>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                                                     {videos.slice(0, 6).map((video, index) => (
