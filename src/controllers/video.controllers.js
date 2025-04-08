@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import { Video } from "../models/video.models.js"
 import { uploadToCloudinary, deletefromCloudinary, deleteVideoFromCloudinary } from "../utils/cloudinary.js"
 import { getVideoDuration } from "../utils/videoDuration.js"
+import { User } from "../models/user.models.js"
 
 //#region Code to create video and upload it to cloudinary and db
 const createVideo = asyncHandler(async (req, res) => {
@@ -85,6 +86,54 @@ const getVideoById = asyncHandler(async (req, res) => {
     return res.status(201).json(
         new ApiResponse(200, video, "Video fetched successfully")
     )
+});
+//#endregion
+
+//#region Code to update view count of video with updating watch history of user
+const updateView = asyncHandler(async (req, res) => {
+    // Extract videoId from URL parameters
+    const { videoId } = req.params;
+
+    // Validate the videoId format (must be a valid MongoDB ObjectId)
+    if (!isValidObjectId(videoId)) {
+        return res.status(400).json(new ApiResponse(401, [], "Please enter correct video id"));
+    }
+
+    // Fetch video details from the database using videoId
+    const video = await Video.findById(videoId);
+    if (!video) {
+        return res.status(400).json(new ApiResponse(401, [], "Video not found"));
+    }
+
+    // Check if the user is logged in (userId available in req.user)
+    const userId = req.user?._id;
+    console.log("userId", userId)
+    if (userId) {
+        // Fetch user details from the database
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(401).json(new ApiResponse(401, [], "User not found"));
+        }
+
+        // Check if the user has already watched this video (videoId in watchHistory)
+        const hasWatched = user.watchHistory.includes(videoId);
+
+        if (!hasWatched) {
+            // If not watched before, increment the video's views
+            video.views += 1;
+            await video.save();
+
+            // Add videoId to the user's watchHistory
+            user.watchHistory.push(videoId);
+            await user.save();
+        }
+    }
+
+    // Return video details in the response
+    return res.status(200).json(
+        new ApiResponse(200, video.views, "Video fetched successfully")
+    );
 })
 //#endregion
 
@@ -289,4 +338,4 @@ const getAllVideos = asyncHandler(async (req, res) => {
 //#endregion
 
 
-export { createVideo, getVideoById, getVideoByUserId, deleteVideo, updateVideoDetails, getAllVideos, getVideoByUsername }
+export { createVideo, getVideoById, getVideoByUserId, deleteVideo, updateVideoDetails, getAllVideos, getVideoByUsername, updateView }

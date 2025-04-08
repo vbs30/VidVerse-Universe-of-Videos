@@ -101,6 +101,11 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
                 if (data.success) {
                     setVideo(data.data)
 
+                    await fetch(`http://localhost:8000/api/v1/videos/view/${videoid}`, {
+                        method: 'GET',
+                        credentials: 'include',
+                    });
+
                     // Fetch channel data once we have the video owner's username
                     const channelResponse = await fetch(
                         `http://localhost:8000/api/v1/users/c/${encodeURIComponent(data.data.ownerName)}`
@@ -669,7 +674,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
                                             key={video._id}
                                             title={video.title}
                                             channelName={video.ownerName}
-                                            views={`${formatViews(Number(video.views))} views`}
+                                            views={`${formatViews(Number(video?.views))} views`}
                                             timeAgo={getTimeAgo(video.createdAt)}
                                             duration={video.duration}
                                             thumbnailUrl={video.thumbnail}
