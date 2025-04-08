@@ -252,9 +252,9 @@ const ManageVideos = () => {
     }
 
     return (
-        <div className="flex flex-col h-screen bg-gray-50 dark:bg-black">
+        <div className="flex flex-col h-screen bg-gray-50 dark:bg-neutral-950">
             {/* Fixed header */}
-            <header className="sticky top-0 flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-black px-4 z-10">
+            <header className="sticky top-0 flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-neutral-950 px-4 z-10">
                 <SidebarTrigger className="-ml-1" />
                 <Separator orientation="vertical" className="mx-2 h-4 dark:bg-white/10" />
                 <div className="flex items-center space-x-4">
@@ -286,7 +286,7 @@ const ManageVideos = () => {
                                                 alt={video.title}
                                                 className="w-full h-full object-cover"
                                             />
-                                            <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+                                            <div className="absolute bottom-2 right-2 bg-neutral-950 bg-opacity-70 text-white text-xs px-2 py-1 rounded">
                                                 {video.duration}
                                             </div>
                                         </Link>

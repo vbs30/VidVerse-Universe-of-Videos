@@ -232,9 +232,9 @@ export default function CreateVideo() {
     );
 
     return (
-        <div className="h-screen bg-gray-50 dark:bg-neutral-900 flex flex-col overflow-hidden">
+        <div className="h-screen bg-gray-50 dark:bg-neutral-950 flex flex-col overflow-hidden">
             {/* Category header - fixed at the top */}
-            <header className="sticky top-0 flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-black px-4 z-10">
+            <header className="sticky top-0 flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-neutral-950 px-4 z-10">
                 <SidebarTrigger className="-ml-1" />
                 <Separator orientation="vertical" className="mx-2 h-4 dark:bg-white/10" />
                 <div className="flex items-center space-x-4">
@@ -273,7 +273,7 @@ export default function CreateVideo() {
                                     {!videoPreview ? (
                                         <div
                                             onClick={() => videoInputRef.current?.click()}
-                                            className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                                            className="border-2 border-dashed border-gray-300 dark:border-gray-400 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
                                         >
                                             <div className="flex flex-col items-center justify-center">
                                                 <Upload className="h-12 w-12 text-gray-400 dark:text-gray-500 mb-3" />
@@ -319,7 +319,7 @@ export default function CreateVideo() {
                                     {!thumbnailPreview ? (
                                         <div
                                             onClick={() => thumbnailInputRef.current?.click()}
-                                            className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                                            className="border-2 border-dashed border-gray-300 dark:border-gray-400 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
                                         >
                                             <div className="flex flex-col items-center justify-center">
                                                 <Camera className="h-12 w-12 text-gray-400 dark:text-gray-500 mb-3" />
@@ -368,7 +368,7 @@ export default function CreateVideo() {
                                     id="title"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-base py-3 px-4"
+                                    className="mt-1 block w-full rounded-md border-2 border-dashed border-gray-300 dark:border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-400 text-base py-3 px-4"
                                     placeholder="Enter video title"
                                     required
                                 />
@@ -384,7 +384,7 @@ export default function CreateVideo() {
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     rows={4}
-                                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 text-base py-3 px-4"
+                                    className="mt-1 block w-full rounded-md border-2 border-dashed border-gray-300 dark:border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-400 text-base py-3 px-4"
                                     placeholder="Describe your video"
                                 />
                             </div>

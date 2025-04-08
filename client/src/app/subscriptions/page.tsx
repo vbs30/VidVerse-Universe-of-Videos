@@ -69,7 +69,7 @@ const SubscriptionsPage = () => {
     if (!isAuthenticated) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-white dark:bg-neutral-800">
-                <div className="text-center bg-white dark:bg-black p-8 rounded-lg shadow-lg max-w-md">
+                <div className="text-center bg-white dark:bg-neutral-950 p-8 rounded-lg shadow-lg max-w-md">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-8 h-8">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -90,7 +90,7 @@ const SubscriptionsPage = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-neutral-950">
                 <div className="flex flex-col items-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                     <p className="mt-4 text-gray-600 dark:text-gray-300">Loading your subscriptions...</p>
@@ -101,8 +101,8 @@ const SubscriptionsPage = () => {
 
     if (error) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
-                <div className="text-center bg-white dark:bg-black p-8 rounded-lg shadow-lg max-w-md">
+            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-neutral-950">
+                <div className="text-center bg-white dark:bg-neutral-950 p-8 rounded-lg shadow-lg max-w-md">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-8 h-8">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -123,7 +123,7 @@ const SubscriptionsPage = () => {
 
     if (!subscriptions || subscriptions.channels.length === 0) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-neutral-950">
                 <div className="text-center bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg max-w-md">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-8 h-8">
@@ -141,9 +141,9 @@ const SubscriptionsPage = () => {
     }
 
     return (
-        <div className="flex flex-col h-screen bg-white dark:bg-black">
+        <div className="flex flex-col h-screen bg-white dark:bg-neutral-950">
             {/* Category header - fixed at the top */}
-            <header className="flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-black px-4 z-10">
+            <header className="flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-neutral-950 px-4 z-10">
                 <SidebarTrigger className="-ml-1" />
                 <Separator orientation="vertical" className="mx-2 h-4 dark:bg-white/10" />
                 <div className="flex items-center space-x-4">
@@ -161,7 +161,7 @@ const SubscriptionsPage = () => {
                     <div className="flex flex-col space-y-4 max-w-3xl mx-auto pb-8">
                         {subscriptions.channels.map((channel) => (
                             <Link key={channel._id} href={`/channel/${channel.username}`} className="block w-full">
-                                <div className="flex items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
+                                <div className="flex items-center p-4 bg-white dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300">
                                     <div className="border-white dark:border-gray-700">
                                         <img
                                             src={channel.avatar || "/api/placeholder/128/128"}

@@ -291,9 +291,9 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
   if (!channelData) return null;
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-black">
+    <div className="flex flex-col h-screen bg-white dark:bg-neutral-950">
       {/* Category header - fixed at the top */}
-      <header className="flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-black px-4 z-10">
+      <header className="flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-neutral-950 px-4 z-10">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mx-2 h-4 dark:bg-white/10" />
         <div className="flex items-center space-x-4">
@@ -397,7 +397,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black z-10">
+          <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-neutral-950 z-10">
             <nav className="flex overflow-x-auto scrollbar-none" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
               <button
                 onClick={() => setActiveTab("videos")}

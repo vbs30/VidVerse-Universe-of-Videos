@@ -508,7 +508,7 @@ const PlaylistSection: React.FC = () => {
                                 {playlists.map((playlist) => (
                                     <div
                                         key={playlist._id}
-                                        className="bg-white dark:bg-gray-900 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-md transition-shadow"
+                                        className="bg-white dark:bg-neutral-900 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-md transition-shadow"
                                     >
                                         <div
                                             className="relative h-40 bg-gray-100 dark:bg-gray-800 flex items-center justify-center cursor-pointer"

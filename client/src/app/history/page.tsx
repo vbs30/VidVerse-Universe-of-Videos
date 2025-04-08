@@ -225,9 +225,9 @@ const WatchHistoryPage: React.FC = () => {
     const groupedVideos = groupVideosByDay(watchHistory);
 
     return (
-        <div className="flex flex-col h-screen bg-white dark:bg-black">
+        <div className="flex flex-col h-screen bg-white dark:bg-neutral-950">
             {/* Header */}
-            <header className="flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-black px-4 z-10">
+            <header className="flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-neutral-950 px-4 z-10">
                 <SidebarTrigger className="-ml-1" />
                 <Separator orientation="vertical" className="mx-2 h-4 dark:bg-white/10" />
                 <div className="flex items-center space-x-4">
@@ -271,7 +271,7 @@ const WatchHistoryPage: React.FC = () => {
                                         </h3>
                                         <div className="space-y-4">
                                             {videos.map((video) => (
-                                                <div key={video._id} className="flex flex-col sm:flex-row gap-4 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors duration-200">
+                                                <div key={video._id} className="flex flex-col sm:flex-row gap-4 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors duration-200">
                                                     {/* Thumbnail with duration - clickable to video */}
                                                     <Link href={`/videos/${video._id}`} className="relative flex-shrink-0 sm:w-64 w-full h-44 sm:h-36 rounded-lg overflow-hidden block">
                                                         <img

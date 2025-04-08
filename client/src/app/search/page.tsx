@@ -137,7 +137,7 @@ export default function SearchPage() {
                         <div className="overflow-y-auto scrollbar-hide max-h-[calc(100vh-100px)] pb-16">
                             <TabPanel>
                                 {videos.length === 0 && channels.length === 0 ? (
-                                    <div className="text-center p-8 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                                    <div className="text-center p-8 bg-gray-100 dark:bg-neutral-800 rounded-lg">
                                         <h2 className="text-xl font-medium mb-2">No results found for "{query}"</h2>
                                     </div>
                                 ) : (
@@ -189,7 +189,7 @@ export default function SearchPage() {
 
                             <TabPanel>
                                 {videos.length === 0 ? (
-                                    <div className="text-center p-8 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                                    <div className="text-center p-8 bg-gray-100 dark:bg-neutral-800 rounded-lg">
                                         <h2 className="text-xl font-medium mb-2">No videos found for "{query}"</h2>
                                     </div>
                                 ) : (
@@ -203,7 +203,7 @@ export default function SearchPage() {
 
                             <TabPanel>
                                 {channels.length === 0 ? (
-                                    <div className="text-center p-8 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                                    <div className="text-center p-8 bg-gray-100 dark:bg-neutral-800 rounded-lg">
                                         <h2 className="text-xl font-medium mb-2">No channels found for "{query}"</h2>
                                     </div>
                                 ) : (
@@ -261,7 +261,7 @@ function VideoCard({ video }: { video: Video }) {
 
     // Using index instead of ID for the link since we're not sure if _id exists
     return (
-        <Link href={`/videos/${video._id}`} className="block bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
+        <Link href={`/videos/${video._id}`} className="block bg-white dark:bg-neutral-900 rounded-lg overflow-hidden">
             <VideoGallery
                 key={video._id}
                 title={video.title}
@@ -279,7 +279,7 @@ function VideoCard({ video }: { video: Video }) {
 function ChannelCard({ channel }: { channel: Channel }) {
     // Using index instead of ID for the link since we're not sure if _id exists
     return (
-        <Link href={`/channel/${channel.username}`} className="block bg-white dark:bg-gray-800 rounded-lg p-6 text-center hover:shadow-md transition-shadow">
+        <Link href={`/channel/${channel.username}`} className="block bg-white dark:bg-neutral-800 rounded-lg p-6 text-center hover:shadow-md transition-shadow">
             <div className="flex justify-center mb-4">
                 {channel.avatar ? (
                     <img src={channel.avatar} alt={channel.username} className="w-20 h-20 rounded-full object-cover" />

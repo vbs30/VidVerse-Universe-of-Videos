@@ -489,7 +489,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
                 <div className="mb-8">
                     <form onSubmit={handleSubmitComment} className="flex flex-col">
                         <div className="flex gap-3 mb-2">
-                            <div className="w-10 h-10 flex-shrink-0 rounded-full bg-gray-300 dark:bg-gray-700 overflow-hidden">
+                            <div className="w-10 h-10 flex-shrink-0 rounded-full bg-gray-300 dark:bg-neutral-800 overflow-hidden">
                                 {user?.avatar ? (
                                     <img
                                         src={user.avatar}

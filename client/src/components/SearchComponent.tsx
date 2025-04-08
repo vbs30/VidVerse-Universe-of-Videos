@@ -144,7 +144,7 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
     if (!showSuggestions || suggestions.length === 0) return null;
 
     return (
-      <div className={`absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto ${isMobile ? 'top-12 right-0' : 'top-10'}`}>
+      <div className={`absolute z-50 mt-1 w-full bg-white dark:bg-neutral-900 border border-gray-300 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto ${isMobile ? 'top-12 right-0' : 'top-10'}`}>
         {isLoading ? (
           <div className="p-3 text-sm text-center text-gray-500">Loading suggestions...</div>
         ) : (
@@ -152,7 +152,7 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
             {suggestions.map((suggestion, index) => (
               <li
                 key={`${suggestion.type}-${index}`}
-                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center justify-between"
+                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-neutral-700 cursor-pointer flex items-center justify-between"
                 onClick={() => handleSuggestionClick(suggestion)}
               >
                 <div className="flex items-center">
@@ -235,11 +235,11 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
 
   return (
     <div className="relative w-full max-w-md mx-auto" ref={searchRef}>
-      <form onSubmit={handleSearch} className={`flex items-center w-full px-2 rounded-lg border ${isDarkTheme ? 'border-gray-700 bg-gray-800' : 'border-gray-300 bg-gray-100'} ${className}`}>
+      <form onSubmit={handleSearch} className={`flex items-center w-full px-2 rounded-lg border ${isDarkTheme ? 'border-gray-700 bg-neutral-900' : 'border-gray-300 bg-gray-100'} ${className}`}>
         <input
           type="text"
           placeholder="Search videos and channels..."
-          className={`w-full p-2 outline-none ${isDarkTheme ? 'bg-gray-800 placeholder-gray-500 text-white' : 'bg-gray-100 placeholder-gray-500 text-black'}`}
+          className={`w-full p-2 outline-none ${isDarkTheme ? 'bg-neutral-900 placeholder-gray-500 text-white' : 'bg-gray-100 placeholder-gray-500 text-black'}`}
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);

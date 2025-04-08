@@ -476,7 +476,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
     return (
         <div className="w-full h-screen flex flex-col overflow-hidden">
             {/* Category header - fixed at the top */}
-            <header className="flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-black px-4 z-10">
+            <header className="flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-neutral-950 px-4 z-10">
                 <SidebarTrigger className="-ml-1" />
                 <Separator orientation="vertical" className="mx-2 h-4 dark:bg-white/10" />
                 <div className="flex items-center space-x-4">
@@ -485,11 +485,11 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
             </header>
 
             {/* Main content area - flex column on mobile/tab, flex row on desktop */}
-            <div className="flex flex-col lg:flex-row w-full overflow-y-auto flex-grow scrollbar-hide">
+            <div className="flex flex-col lg:flex-row w-full overflow-y-auto flex-grow scrollbar-hide dark:bg-neutral-950">
                 {/* Left section (video and details) */}
                 <div className="w-full lg:w-3/5 lg:px-10 lg:py-8 md:px-4 md:py-4">
                     {/* Video Player Section */}
-                    <div className="mb-6 rounded-lg overflow-hidden bg-black aspect-video relative">
+                    <div className="mb-6 rounded-lg overflow-hidden aspect-video relative">
                         {isAuthenticated ? (
                             <video
                                 ref={videoRef}
