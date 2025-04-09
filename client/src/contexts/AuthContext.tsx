@@ -9,6 +9,7 @@ export interface User {
     avatar: string;
     coverImage: string;
     email: string;
+    createdAt: string;
 }
 
 interface AuthContextType {
