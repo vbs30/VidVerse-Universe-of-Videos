@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { z, ZodError } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import { useForm } from "react-hook-form";
 import {
     AlertDialog,
@@ -34,6 +33,9 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
     const [profileFile, setProfileFile] = useState<File | null>(null);
     const [additionalFile, setAdditionalFile] = useState<File | null>(null);
     const [otpValue, setOtpValue] = useState<string>("");
+    const [verificationCode, setVerificationCode] = useState<string>("");
+    const [isResendingOTP, setIsResendingOTP] = useState<boolean>(false);
+    const [otpError, setOtpError] = useState<string>("");
     const [otpComplete, setOtpComplete] = useState<boolean>(false);
     const [passwordsMatch, setPasswordsMatch] = useState<boolean>(false);
 
@@ -92,15 +94,94 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
     });
 
 
-    // Handle step 1 form submission
-    const onSubmitStep1 = (data: SignUpStep1) => {
-        setFormData(prev => ({
-            ...prev,
-            step1: data,
-        }));
-        setStep(2);
+    const onSubmitStep1 = async (data: SignUpStep1) => {
+        try {
+            // Generate a 6-digit OTP
+            const generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            setVerificationCode(generatedOTP);
+
+            // Update form data
+            setFormData(prev => ({
+                ...prev,
+                step1: data,
+            }));
+
+            // Send verification email using our API endpoint
+            const response = await fetch('/api/send-verification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: data.email,
+                    username: data.username,
+                    verificationCode: generatedOTP
+                }),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                toast.success("Verification code sent to your email, Please check your inbox or spam folder");
+                setStep(2);
+            } else {
+                toast.error(result.message || "Failed to send verification code");
+            }
+        } catch (error) {
+            console.error("Error in submit step 1:", error);
+            toast.error("Something went wrong. Please try again.");
+        }
     };
 
+    // Add a function to handle OTP verification
+    const verifyOTP = () => {
+        if (otpValue === verificationCode) {
+            setOtpError("");
+            // Add a slight delay for better UX
+            setTimeout(() => {
+                setStep(3);
+            }, 500);
+        } else {
+            setOtpError("Invalid verification code. Please try again.");
+        }
+    };
+
+    // Add a function to resend OTP
+    const resendOTP = async () => {
+        try {
+            setIsResendingOTP(true);
+
+            // Generate a new OTP
+            const newOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            setVerificationCode(newOTP);
+
+            // Send new verification email using our API endpoint
+            const response = await fetch('/api/send-verification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: formData.step1.email,
+                    username: formData.step1.username,
+                    verificationCode: newOTP
+                }),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                toast.success("Verification code resent to your email");
+            } else {
+                toast.error(result.message || "Failed to resend verification code");
+            }
+        } catch (error) {
+            console.error("Error resending OTP:", error);
+            toast.error("Something went wrong. Please try again.");
+        } finally {
+            setIsResendingOTP(false);
+        }
+    };
 
     // Check password criteria in real-time
     const checkPasswordCriteria = (password: string) => {
@@ -149,14 +230,7 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
     const handleOtpChange = (value: string) => {
         setOtpValue(value);
         setOtpComplete(value.length === 6);
-
-        // Auto proceed to next step if OTP is complete
-        if (value.length === 6) {
-            // Add a slight delay for better UX
-            setTimeout(() => {
-                setStep(3);
-            }, 500);
-        }
+        if (otpError) setOtpError("");
     };
 
     // Handle file selection - modified to store file info instead of preview image
@@ -460,8 +534,29 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
                                     </InputOTPGroup>
                                 </InputOTP>
                             </div>
+
+                            {otpError && (
+                                <p className="text-destructive text-sm">
+                                    {otpError}
+                                </p>
+                            )}
+
                             <p className="text-sm text-muted-foreground text-center">
-                                Didn't receive a code? <button className="text-blue-500 hover:underline">Resend</button>
+                                Didn't receive a code? {' '}
+                                <button
+                                    className="text-blue-500 hover:underline"
+                                    onClick={resendOTP}
+                                    disabled={isResendingOTP}
+                                >
+                                    {isResendingOTP ? (
+                                        <>
+                                            <Loader2 size={14} className="inline mr-1 animate-spin" />
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        "Resend"
+                                    )}
+                                </button>
                             </p>
                         </div>
                     )}
@@ -650,6 +745,8 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
                             onClick={() => {
                                 if (step === 1) {
                                     form.handleSubmit(onSubmitStep1)();
+                                } else if (step === 2) {
+                                    verifyOTP(); // Use our verification function
                                 } else {
                                     setStep(step + 1);
                                 }
@@ -661,7 +758,7 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
                             }
                             type={step === 1 ? "button" : "button"}
                         >
-                            Next
+                            {step === 2 ? "Verify" : "Next"}
                         </Button>
                     ) : (
                         <Button
