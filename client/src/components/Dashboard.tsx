@@ -15,7 +15,8 @@ import {
   Settings,
   LogIn,
   UserPlus,
-  ThumbsUp
+  ThumbsUp,
+  BadgeInfo 
 } from 'lucide-react';
 
 import {
@@ -45,9 +46,9 @@ export function Dashboard() {
       icon: Home,
     },
     {
-      title: "Tweets Corner",
-      url: "/tweets",
-      icon: Twitter,
+      title: "About us",
+      url: "/about",
+      icon: BadgeInfo,
     },
   ];
 
@@ -73,9 +74,9 @@ export function Dashboard() {
       icon: ThumbsUp,
     },
     {
-      title: "Tweets Corner",
-      url: "/tweets",
-      icon: Twitter,
+      title: "About us",
+      url: "/about",
+      icon: BadgeInfo,
     },
   ];
 

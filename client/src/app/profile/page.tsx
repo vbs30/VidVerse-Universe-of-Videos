@@ -255,7 +255,7 @@ const ProfilePage = () => {
                 <Calendar className="w-4 h-4 mr-1" />
                 Joined {new Date(channelData?.createdAt || user.createdAt).toLocaleDateString()}
               </span>
-              <Link href="/profile/edit">
+              <Link href="/settings">
                 <button className="flex items-center px-4 py-2 border border-gray-300 dark:border-neutral-700 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-700">
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Profile
