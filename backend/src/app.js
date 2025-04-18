@@ -48,4 +48,10 @@ app.use("/api/v1/likes", likeRouter)
 app.use("/api/v1/healthcheck", healthcheckRouter)
 app.use("/api/v1/dashboard", dashboardRouter)
 
+app.get("/api/v1", (req, res) => {
+    res.status(200).json({
+        message: "Welcome to the backend of the app"
+    })
+})
+
 export { app }
