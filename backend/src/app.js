@@ -6,8 +6,8 @@ const app = express()
 
 app.use(cors({
     origin: ["https://vidverse-universe-of-videos.vercel.app", "http://localhost:3000"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ['Content-Type', 'Authorization', 'cache-control', 'x-requested-with'],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ['Content-Type', 'Authorization', 'cache-control', 'Cache-Control', 'x-requested-with'],
     credentials: true,
 }))
 
