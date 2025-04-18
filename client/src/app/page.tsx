@@ -71,7 +71,7 @@ export default function Page() {
     const fetchVideos = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:8000/api/v1/dashboard/all-videos");
+        const response = await fetch("https://vidverse-backend.vercel.app/api/v1/dashboard/all-videos");
         const data: ApiResponse = await response.json();
 
         if (data.success) {

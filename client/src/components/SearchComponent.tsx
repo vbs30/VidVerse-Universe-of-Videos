@@ -64,11 +64,11 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
       setIsLoading(true);
       try {
         // Fetch videos
-        const videosResponse = await fetch('http://localhost:8000/api/v1/dashboard/all-videos');
+        const videosResponse = await fetch('https://vidverse-backend.vercel.app/api/v1/dashboard/all-videos');
         const videosData = await videosResponse.json() as ApiResponse<VideoData>;
 
         // Fetch channels
-        const channelsResponse = await fetch('http://localhost:8000/api/v1/subscription/all-channels');
+        const channelsResponse = await fetch('https://vidverse-backend.vercel.app/api/v1/subscription/all-channels');
         const channelsData = await channelsResponse.json() as ApiResponse<ChannelData>;
 
         if (videosData.success && channelsData.success) {

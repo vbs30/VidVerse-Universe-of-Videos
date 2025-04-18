@@ -94,20 +94,20 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
         const fetchVideoData = async () => {
             try {
                 setIsLoading(true)
-                const response = await fetch(`http://localhost:8000/api/v1/videos/v/${videoid}`)
+                const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/v/${videoid}`)
                 const data = await response.json()
 
                 if (data.success) {
                     setVideo(data.data)
 
-                    await fetch(`http://localhost:8000/api/v1/videos/view/${videoid}`, {
+                    await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/view/${videoid}`, {
                         method: 'GET',
                         credentials: 'include',
                     });
 
                     // Fetch channel data once we have the video owner's username
                     const channelResponse = await fetch(
-                        `http://localhost:8000/api/v1/users/c/${encodeURIComponent(data.data.ownerName)}`
+                        `https://vidverse-backend.vercel.app/api/v1/users/c/${encodeURIComponent(data.data.ownerName)}`
                     )
                     const channelData = await channelResponse.json()
 
@@ -154,7 +154,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
         }
 
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/subscription/check/${channelId}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/subscription/check/${channelId}`, {
                 credentials: 'include',
             })
 
@@ -171,7 +171,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
     const fetchRecommendedVideos = async (channelUsername: string, currentVideoId: string) => {
         try {
             setLoadingRecommended(true)
-            const response = await fetch(`http://localhost:8000/api/v1/videos/cv/${encodeURIComponent(channelUsername)}`)
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/cv/${encodeURIComponent(channelUsername)}`)
 
             if (response.ok) {
                 const result = await response.json()
@@ -203,7 +203,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
     const fetchLikesCount = async () => {
         try {
             const likesCountResponse = await fetch(
-                `http://localhost:8000/api/v1/likes/count/${videoid}`
+                `https://vidverse-backend.vercel.app/api/v1/likes/count/${videoid}`
             )
             const likesCountData = await likesCountResponse.json()
 
@@ -219,7 +219,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
     const checkUserLikeStatus = async () => {
         try {
             const likesResponse = await fetch(
-                `http://localhost:8000/api/v1/likes/check-likes/${videoid}`,
+                `https://vidverse-backend.vercel.app/api/v1/likes/check-likes/${videoid}`,
                 {
                     credentials: 'include',
                 }
@@ -243,7 +243,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
 
         try {
             setLoadingPlaylists(true)
-            const response = await fetch("http://localhost:8000/api/v1/playlist/get-user-playlist", {
+            const response = await fetch("https://vidverse-backend.vercel.app/api/v1/playlist/get-user-playlist", {
                 credentials: 'include',
             })
 
@@ -271,7 +271,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
 
         try {
             setSavingToPlaylist(true)
-            const response = await fetch(`http://localhost:8000/api/v1/playlist/add/${video._id}/${playlistId}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/playlist/add/${video._id}/${playlistId}`, {
                 method: 'PATCH',
                 credentials: 'include',
             })
@@ -301,7 +301,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
 
         try {
             const response = await fetch(
-                `http://localhost:8000/api/v1/likes/toggle/v/${videoid}`,
+                `https://vidverse-backend.vercel.app/api/v1/likes/toggle/v/${videoid}`,
                 {
                     method: 'POST',
                     credentials: 'include',
@@ -335,7 +335,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
         try {
             setSubscribing(true)
 
-            const response = await fetch(`http://localhost:8000/api/v1/subscription/c/${channel._id}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/subscription/c/${channel._id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

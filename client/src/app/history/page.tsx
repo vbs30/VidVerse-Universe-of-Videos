@@ -136,7 +136,7 @@ const WatchHistoryPage: React.FC = () => {
             try {
                 setLoading(true);
 
-                const response = await fetch('http://localhost:8000/api/v1/users/watch-history', {
+                const response = await fetch('https://vidverse-backend.vercel.app/api/v1/users/watch-history', {
                     credentials: 'include',
                 });
 

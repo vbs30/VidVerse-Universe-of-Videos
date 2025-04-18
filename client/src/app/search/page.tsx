@@ -63,11 +63,11 @@ function SearchPageContent() {
 
             try {
                 // Fetch videos
-                const videosResponse = await fetch('http://localhost:8000/api/v1/dashboard/all-videos');
+                const videosResponse = await fetch('https://vidverse-backend.vercel.app/api/v1/dashboard/all-videos');
                 const videosData = await videosResponse.json();
 
                 // Fetch channels
-                const channelsResponse = await fetch('http://localhost:8000/api/v1/subscription/all-channels');
+                const channelsResponse = await fetch('https://vidverse-backend.vercel.app/api/v1/subscription/all-channels');
                 const channelsData = await channelsResponse.json();
 
                 if (videosData.success && channelsData.success) {

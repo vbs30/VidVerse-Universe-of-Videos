@@ -86,7 +86,7 @@ const PlaylistSection: React.FC = () => {
     const fetchPlaylists = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost:8000/api/v1/playlist/get-user-playlist', {
+            const response = await fetch('https://vidverse-backend.vercel.app/api/v1/playlist/get-user-playlist', {
                 credentials: 'include',
             });
 
@@ -112,7 +112,7 @@ const PlaylistSection: React.FC = () => {
     const fetchPlaylistDetails = async (playlistId: string) => {
         try {
             setLoading(true);
-            const response = await fetch(`http://localhost:8000/api/v1/playlist/p/${playlistId}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/playlist/p/${playlistId}`, {
                 credentials: 'include',
             });
 
@@ -138,7 +138,7 @@ const PlaylistSection: React.FC = () => {
     const createPlaylist = async () => {
         try {
             setIsSubmitting(true);
-            const response = await fetch('http://localhost:8000/api/v1/playlist/create-playlist', {
+            const response = await fetch('https://vidverse-backend.vercel.app/api/v1/playlist/create-playlist', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -177,7 +177,7 @@ const PlaylistSection: React.FC = () => {
 
         try {
             setIsSubmitting(true);
-            const response = await fetch(`http://localhost:8000/api/v1/playlist/p/${selectedPlaylist._id}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/playlist/p/${selectedPlaylist._id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -216,7 +216,7 @@ const PlaylistSection: React.FC = () => {
     const deletePlaylist = async (playlistId: string) => {
         try {
             setIsSubmitting(true);
-            const response = await fetch(`http://localhost:8000/api/v1/playlist/p/${playlistId}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/playlist/p/${playlistId}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });
@@ -244,7 +244,7 @@ const PlaylistSection: React.FC = () => {
     const removeVideoFromPlaylist = async (videoId: string, playlistId: string) => {
         try {
             setIsSubmitting(true);
-            const response = await fetch(`http://localhost:8000/api/v1/playlist/remove/${videoId}/${playlistId}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/playlist/remove/${videoId}/${playlistId}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });

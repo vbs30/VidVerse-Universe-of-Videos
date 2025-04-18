@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         try {
             setIsLoading(true);
-            const response = await fetch('http://localhost:8000/api/v1/users/get-current-user', {
+            const response = await fetch('https://vidverse-backend.vercel.app/api/v1/users/get-current-user', {
                 method: 'GET',
                 credentials: 'include',
                 headers: {
@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const logout = async () => {
         try {
-            const response = await fetch('http://localhost:8000/api/v1/users/logout', {
+            const response = await fetch('https://vidverse-backend.vercel.app/api/v1/users/logout', {
                 method: 'POST',
                 credentials: 'include',
             });

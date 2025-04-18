@@ -287,7 +287,7 @@ export function SignUpBox({ className }: React.ComponentProps<"div">) {
             console.log("Form data to send:", formDataToSend);
 
             // Send data to the API endpoint
-            const response = await fetch("http://localhost:8000/api/v1/users/register", {
+            const response = await fetch("https://vidverse-backend.vercel.app/api/v1/users/register", {
                 method: "POST",
                 body: formDataToSend,
                 // No need to set Content-Type - browser will set it with boundary for FormData
@@ -302,7 +302,7 @@ export function SignUpBox({ className }: React.ComponentProps<"div">) {
             }
 
             // Success - fetch current user data
-            const userResponse = await fetch('http://localhost:8000/api/v1/users/get-current-user', {
+            const userResponse = await fetch('https://vidverse-backend.vercel.app/api/v1/users/get-current-user', {
                 credentials: 'include'
             });
             const userData = await userResponse.json();

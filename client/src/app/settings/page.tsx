@@ -33,7 +33,7 @@ const SettingsPage: React.FC = () => {
         }
 
         try {
-            const response = await fetch('http://localhost:8000/api/v1/users/change-password', {
+            const response = await fetch('https://vidverse-backend.vercel.app/api/v1/users/change-password', {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
@@ -79,7 +79,7 @@ const SettingsPage: React.FC = () => {
         formData.append('avatar', avatarFile)
 
         try {
-            const response = await fetch('http://localhost:8000/api/v1/users/update-avatar', {
+            const response = await fetch('https://vidverse-backend.vercel.app/api/v1/users/update-avatar', {
                 method: 'PATCH',
                 credentials: 'include',
                 body: formData
@@ -115,7 +115,7 @@ const SettingsPage: React.FC = () => {
         formData.append('coverImage', coverImageFile)
 
         try {
-            const response = await fetch('http://localhost:8000/api/v1/users/update-cover-image', {
+            const response = await fetch('https://vidverse-backend.vercel.app/api/v1/users/update-cover-image', {
                 method: 'PATCH',
                 credentials: 'include',
                 body: formData

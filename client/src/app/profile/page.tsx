@@ -114,7 +114,7 @@ const ProfilePage = () => {
       if (isAuthenticated && user?.username) {
         try {
           // Fetch channel data
-          const channelResponse = await fetch(`http://localhost:8000/api/v1/users/c/${user.username}`, {
+          const channelResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/users/c/${user.username}`, {
             credentials: 'include',
           });
           const channelResult = await channelResponse.json();
@@ -124,7 +124,7 @@ const ProfilePage = () => {
           }
 
           // Fetch video stats
-          const videosResponse = await fetch(`http://localhost:8000/api/v1/videos/cv/${user.username}`, {
+          const videosResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/cv/${user.username}`, {
             credentials: 'include',
           });
           const videosResult = await videosResponse.json();

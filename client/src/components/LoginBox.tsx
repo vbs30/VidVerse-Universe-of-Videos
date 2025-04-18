@@ -41,7 +41,7 @@ export function LoginBox({
     const onSubmitLogin = async (data: LoginFormInputs) => {
         setIsSubmitting(true)
 
-        const response = await fetch("http://localhost:8000/api/v1/users/login", {
+        const response = await fetch("https://vidverse-backend.vercel.app/api/v1/users/login", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ export function LoginBox({
             toast.success(jsonData.message || 'Login Successful')
 
             // Fetch current user data after successful login
-            const userResponse = await fetch('http://localhost:8000/api/v1/users/get-current-user', {
+            const userResponse = await fetch('https://vidverse-backend.vercel.app/api/v1/users/get-current-user', {
                 credentials: 'include'
             });
             const userData = await userResponse.json();

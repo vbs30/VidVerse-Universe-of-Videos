@@ -56,7 +56,7 @@ const ManageVideos = () => {
             }
 
             try {
-                const response = await fetch(`http://localhost:8000/api/v1/videos/cv/${user.username}`, {
+                const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/cv/${user.username}`, {
                     credentials: 'include',
                 });
 
@@ -176,7 +176,7 @@ const ManageVideos = () => {
             setIsUploading(false);
         });
 
-        xhr.open('PATCH', `http://localhost:8000/api/v1/videos/v/${videoId}`);
+        xhr.open('PATCH', `https://vidverse-backend.vercel.app/api/v1/videos/v/${videoId}`);
         xhr.withCredentials = true;
         setIsUploading(true);
         xhr.send(formData);
@@ -203,7 +203,7 @@ const ManageVideos = () => {
         if (!isAuthenticated || !videoToDelete) return;
 
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/videos/v/${videoToDelete}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/v/${videoToDelete}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });

@@ -36,7 +36,7 @@ const SubscriptionsPage = () => {
             }
 
             try {
-                const response = await fetch(`http://localhost:8000/api/v1/subscription/u/${user.username}`, {
+                const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/subscription/u/${user.username}`, {
                     method: 'GET',
                     credentials: 'include',
                     headers: {

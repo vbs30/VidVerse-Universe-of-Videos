@@ -121,7 +121,7 @@ const LikedVideosPage: React.FC = () => {
                 setLoading(true);
 
                 // First, fetch all liked video IDs
-                const likedResponse = await fetch('http://localhost:8000/api/v1/likes/liked-videos', {
+                const likedResponse = await fetch('https://vidverse-backend.vercel.app/api/v1/likes/liked-videos', {
                     credentials: 'include',
                 });
 
@@ -138,7 +138,7 @@ const LikedVideosPage: React.FC = () => {
                 // Then fetch details for each video
                 const videoPromises = likedData.data.map(async (liked) => {
                     const videoId = liked.video;
-                    const videoResponse = await fetch(`http://localhost:8000/api/v1/videos/v/${videoId}`, {
+                    const videoResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/v/${videoId}`, {
                         credentials: 'include',
                     });
                     console.log(videoResponse)

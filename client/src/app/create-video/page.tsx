@@ -132,7 +132,7 @@ export default function CreateVideo() {
             });
 
             // Open and send the request
-            xhr.open('POST', 'http://localhost:8000/api/v1/videos/create-video', true);
+            xhr.open('POST', 'https://vidverse-backend.vercel.app/api/v1/videos/create-video', true);
             xhr.withCredentials = true;
             xhr.send(formData);
 

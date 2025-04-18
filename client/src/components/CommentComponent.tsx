@@ -80,7 +80,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
     // Fetch user profile data
     const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/users/get-user-profile/${userId}`);
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/users/get-user-profile/${userId}`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch user profile');
@@ -103,7 +103,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
         if (!isAuthenticated) return false;
 
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/likes/check-comment-likes/${commentId}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/likes/check-comment-likes/${commentId}`, {
                 credentials: 'include', // Important to include credentials
                 cache: 'no-store', // Prevent caching to always get fresh data
                 headers: {
@@ -126,7 +126,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
     // Get comment like count
     const getCommentLikeCount = async (commentId: string) => {
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/likes/countComment/${commentId}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/likes/countComment/${commentId}`, {
                 cache: 'no-store', // Prevent caching
                 headers: {
                     'Cache-Control': 'no-cache' // Additional cache control
@@ -149,7 +149,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
     const fetchComments = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`http://localhost:8000/api/v1/comments/c/${videoId}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/comments/c/${videoId}`, {
                 cache: 'no-store', // Prevent caching
                 headers: {
                     'Cache-Control': 'no-cache' // Additional cache control
@@ -228,7 +228,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
         }
 
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/comments/c/${videoId}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/comments/c/${videoId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -260,7 +260,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
         }
 
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/comments/u/${commentId}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/comments/u/${commentId}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -291,7 +291,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
         }
 
         try {
-            const response = await fetch(`http://localhost:8000/api/v1/comments/u/${commentId}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/comments/u/${commentId}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });
@@ -344,7 +344,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
 
         try {
             // Use no-cache to prevent any caching issues
-            const response = await fetch(`http://localhost:8000/api/v1/likes/toggle/c/${commentId}`, {
+            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/likes/toggle/c/${commentId}`, {
                 method: 'POST',
                 credentials: 'include',
                 cache: 'no-store',

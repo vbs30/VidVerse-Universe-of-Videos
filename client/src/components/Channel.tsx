@@ -87,7 +87,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/subscription/check/${channelId}`, {
+      const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/subscription/check/${channelId}`, {
         credentials: 'include',
       });
 
@@ -106,7 +106,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
         setLoading(true);
 
         // Fetch channel info first
-        const channelResponse = await fetch(`http://localhost:8000/api/v1/users/c/${encodeURIComponent(username)}`);
+        const channelResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/users/c/${encodeURIComponent(username)}`);
         if (!channelResponse.ok) {
           const errorText = await channelResponse.text();
           console.error("Channel fetch error:", channelResponse.status, errorText);
@@ -129,7 +129,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
 
         // Fetch channel videos - handle separately
         try {
-          const videosResponse = await fetch(`http://localhost:8000/api/v1/videos/cv/${encodeURIComponent(username)}`);
+          const videosResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/cv/${encodeURIComponent(username)}`);
 
           if (!videosResponse.ok) {
             console.error("Videos fetch error:", videosResponse.status);
@@ -182,7 +182,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
     try {
       setSubscribing(true);
 
-      const response = await fetch(`http://localhost:8000/api/v1/subscription/c/${channelData._id}`, {
+      const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/subscription/c/${channelData._id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

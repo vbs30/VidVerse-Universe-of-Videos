@@ -82,7 +82,7 @@ const MyChannelPage: React.FC = () => {
       try {
         setLoading(true);
 
-        const videosResponse = await fetch(`http://localhost:8000/api/v1/videos/cv/${encodeURIComponent(user.username)}`, {
+        const videosResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/cv/${encodeURIComponent(user.username)}`, {
           credentials: 'include',
         });
 
@@ -97,7 +97,7 @@ const MyChannelPage: React.FC = () => {
           throw new Error(videosResult.message);
         }
 
-        const channelResponse = await fetch(`http://localhost:8000/api/v1/users/c/${encodeURIComponent(user.username)}`, {
+        const channelResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/users/c/${encodeURIComponent(user.username)}`, {
           credentials: 'include', // Add credentials here too
         });
 
