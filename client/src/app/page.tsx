@@ -52,7 +52,7 @@ interface ApiResponse {
   success: boolean;
 }
 
-export const Home: React.FC = () => {
+export default function Page() {
   const [allVideos, setAllVideos] = useState<Video[]>([]); // All fetched videos
   const [displayedVideos, setDisplayedVideos] = useState<Video[]>([]); // Currently displayed videos
   const [loading, setLoading] = useState(true);
@@ -186,12 +186,12 @@ export const Home: React.FC = () => {
     return `${Math.floor(diffInDays / 365)} years ago`;
   };
 
-      // Format view count
-      const formatViews = (views: number): string => {
-        if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`
-        if (views >= 1000) return `${(views / 1000).toFixed(1)}K`
-        return views.toString()
-    }
+  // Format view count
+  const formatViews = (views: number): string => {
+    if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`
+    if (views >= 1000) return `${(views / 1000).toFixed(1)}K`
+    return views.toString()
+  }
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category === selectedCategory ? null : category);
@@ -264,6 +264,4 @@ export const Home: React.FC = () => {
       </div>
     </>
   );
-};
-
-export default Home;
+}
