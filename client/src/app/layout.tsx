@@ -4,8 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import Dashboard from "@/components/Dashboard";
 import { ThemeProvider } from "@/components/ui/theme-provider"
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 

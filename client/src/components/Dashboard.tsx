@@ -5,7 +5,6 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import {
   Home,
-  Twitter,
   History,
   Users,
   PlusCircle,

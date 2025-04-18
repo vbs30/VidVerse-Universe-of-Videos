@@ -6,7 +6,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Trash2, Plus, Loader2, Play, Edit, X } from "lucide-react";
+import { Trash2, Plus, Loader2, Play, Edit, X } from "lucide-react";
 import Link from "next/link";
 import VideoGallery from "@/components/VideoGallery";
 
@@ -567,7 +567,7 @@ const PlaylistSection: React.FC = () => {
                                                                 <AlertDialogTitle>Delete playlist?</AlertDialogTitle>
                                                             </AlertDialogHeader>
                                                             <p className="text-gray-600 dark:text-gray-400">
-                                                                This will permanently delete "{playlist.name}" playlist. This action cannot be undone.
+                                                                This will permanently delete &quot;{playlist.name}&quot; playlist. This action cannot be undone.
                                                             </p>
                                                             <AlertDialogFooter>
                                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -595,7 +595,7 @@ const PlaylistSection: React.FC = () => {
                                 </div>
                                 <h3 className="text-xl font-medium text-gray-900 dark:text-white">No playlists</h3>
                                 <p className="mt-2 text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                                    You haven't created any playlists yet.
+                                    You haven&apos;t created any playlists yet.
                                 </p>
                                 <Button
                                     onClick={() => setShowCreateForm(true)}
@@ -649,7 +649,7 @@ const PlaylistSection: React.FC = () => {
                                             <AlertDialogTitle>Delete playlist?</AlertDialogTitle>
                                         </AlertDialogHeader>
                                         <p className="text-gray-600 dark:text-gray-400">
-                                            This will permanently delete "{selectedPlaylist.name}" playlist. This action cannot be undone.
+                                            This will permanently delete &quot;{selectedPlaylist.name}&quot; playlist. This action cannot be undone.
                                         </p>
                                         <AlertDialogFooter>
                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -701,7 +701,7 @@ const PlaylistSection: React.FC = () => {
                                 </div>
                                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">This playlist has no videos</h3>
                                 <p className="mt-2 text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                                    Add videos to this playlist while watching them by clicking the "Save" button.
+                                    Add videos to this playlist while watching them by clicking the &quot;Save&quot; button.
                                 </p>
                             </div>
                         )}

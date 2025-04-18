@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/accordion'
 import {
     AlertDialog,
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -25,7 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ThumbsUp, Download, Clock, Eye, ChevronDown, Users } from 'lucide-react'
+import { ThumbsUp, Download, Clock, Eye, ChevronDown } from 'lucide-react'
 import VideoGallery from "@/components/VideoGallery";
 import { toast } from "sonner";
 import Link from 'next/link'
@@ -381,7 +380,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
     const formatDate = (dateString: string) => {
         try {
             return format(new Date(dateString), 'MMMM dd, yyyy')
-        } catch (err) {
+        } catch (_) {
             return 'Unknown date'
         }
     }

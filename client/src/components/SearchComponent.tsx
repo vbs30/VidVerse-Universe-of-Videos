@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 interface SearchComponentProps {
   className?: string;
@@ -26,6 +25,25 @@ interface ChannelSuggestion {
 
 type Suggestion = VideoSuggestion | ChannelSuggestion;
 
+// API response types
+interface VideoData {
+  _id: string;
+  title: string;
+  description?: string;
+  ownerName?: string;
+}
+
+interface ChannelData {
+  _id: string;
+  username: string;
+  fullName?: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T[];
+}
+
 export function SearchComponent({ className, isDarkTheme, isMobile = false }: SearchComponentProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -47,38 +65,38 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
       try {
         // Fetch videos
         const videosResponse = await fetch('http://localhost:8000/api/v1/dashboard/all-videos');
-        const videosData = await videosResponse.json();
+        const videosData = await videosResponse.json() as ApiResponse<VideoData>;
 
         // Fetch channels
         const channelsResponse = await fetch('http://localhost:8000/api/v1/subscription/all-channels');
-        const channelsData = await channelsResponse.json();
+        const channelsData = await channelsResponse.json() as ApiResponse<ChannelData>;
 
         if (videosData.success && channelsData.success) {
           // Filter videos by query
           const filteredVideos = videosData.data
-            .filter((video: any) =>
+            .filter((video: VideoData) =>
               video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
               video.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
               video.ownerName?.toLowerCase().includes(searchQuery.toLowerCase())
             )
             .slice(0, 3) // Limit to 3 videos
-            .map((video: any) => ({
+            .map((video: VideoData) => ({
               _id: video._id,
               title: video.title,
-              type: 'video'
+              type: 'video' as const
             }));
 
           // Filter channels by query
           const filteredChannels = channelsData.data
-            .filter((channel: any) =>
+            .filter((channel: ChannelData) =>
               channel.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
               channel.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
             )
             .slice(0, 2) // Limit to 2 channels
-            .map((channel: any) => ({
+            .map((channel: ChannelData) => ({
               _id: channel._id,
               username: channel.username,
-              type: 'channel'
+              type: 'channel' as const
             }));
 
           // Combine and set suggestions
@@ -173,7 +191,7 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
               className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-t text-center"
               onClick={handleSearch}
             >
-              <span className="text-blue-600 dark:text-blue-400">See all results for "{searchQuery}"</span>
+              <span className="text-blue-600 dark:text-blue-400">See all results for &quot;{searchQuery}&quot;</span>
             </li>
           </ul>
         )}

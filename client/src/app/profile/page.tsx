@@ -5,8 +5,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import {
-  BarChart,
-  Bar,
   LineChart,
   Line,
   PieChart,
@@ -20,7 +18,6 @@ import {
   Legend
 } from 'recharts';
 import {
-  Check,
   Edit,
   Film,
   Users,
@@ -34,19 +31,16 @@ import {
   Share2
 } from 'lucide-react';
 import Link from 'next/link';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
   Tabs,
-  TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
@@ -86,7 +80,6 @@ const ProfilePage = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [channelData, setChannelData] = useState<UserChannel | null>(null);
   const [videoStats, setVideoStats] = useState<VideoStats | null>(null);
-  const [isLoadingData, setIsLoadingData] = useState(true);
   // Add this state to manage the active tab
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -150,8 +143,6 @@ const ProfilePage = () => {
           }
         } catch (error) {
           console.error('Error fetching profile data:', error);
-        } finally {
-          setIsLoadingData(false);
         }
       }
     };

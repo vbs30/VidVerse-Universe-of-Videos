@@ -95,14 +95,7 @@ export const Home: React.FC = () => {
 
   // Load more videos when category changes
   useEffect(() => {
-    let filteredVideos = allVideos;
-
-    // In a real app, you'd implement category filtering on the backend
-    // This is just a placeholder for frontend filtering
-    if (selectedCategory) {
-      // Simulate category filtering (replace with real implementation)
-      // filteredVideos = allVideos.filter(video => video.category === selectedCategory);
-    }
+    const filteredVideos = allVideos;
 
     setDisplayedVideos(filteredVideos.slice(0, VIDEOS_PER_PAGE));
     setPage(1);
@@ -117,12 +110,7 @@ export const Home: React.FC = () => {
     const startIndex = (nextPage - 1) * VIDEOS_PER_PAGE;
     const endIndex = nextPage * VIDEOS_PER_PAGE;
 
-    let filteredVideos = allVideos;
-    // Apply category filtering (would be better on backend)
-    if (selectedCategory) {
-      // Simulate filtering (replace with real implementation)
-      // filteredVideos = allVideos.filter(video => video.category === selectedCategory);
-    }
+    const filteredVideos = allVideos;
 
     if (startIndex < filteredVideos.length) {
       const nextVideos = filteredVideos.slice(startIndex, endIndex);

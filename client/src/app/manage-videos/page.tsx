@@ -158,7 +158,7 @@ const ManageVideos = () => {
                         toast.error(response.message || 'Failed to update video');
                     }
                 } catch (error) {
-                    toast.error('Error processing server response');
+                    toast.error('Error processing server response:' + error);
                 }
             } else {
                 toast.error(`Server error: ${xhr.status}`);
@@ -267,7 +267,7 @@ const ManageVideos = () => {
                 <div className="container mx-auto">
                     {videos.length === 0 ? (
                         <div className="text-center py-8 sm:py-12 bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-8">
-                            <p className="text-gray-600 dark:text-gray-300 mb-4">You haven't uploaded any videos yet.</p>
+                            <p className="text-gray-600 dark:text-gray-300 mb-4">You haven&apos;t uploaded any videos yet.</p>
                             <button
                                 onClick={() => window.location.href = '/create-videos'}
                                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-200 dark:bg-blue-700 dark:hover:bg-blue-600"

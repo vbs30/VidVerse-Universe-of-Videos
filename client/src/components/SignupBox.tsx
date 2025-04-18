@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react";
-import { z, ZodError } from "zod";
+import { ZodError } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import {
@@ -24,7 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const steps = ["1", "2", "3", "4"];
 
-export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) {
+export function SignUpBox({ className }: React.ComponentProps<"div">) {
     const { login } = useAuth();
     const [step, setStep] = useState(1);
     const [isOpen, setIsOpen] = useState(false);
@@ -84,14 +84,14 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
         mode: "onChange", // Enable onChange validation mode
     });
 
-    const fileForm = useForm<SignUpStep3>({
-        resolver: zodResolver(signUpStep3Schema),
-        defaultValues: {
-            avatar: undefined,
-            coverImage: undefined
-        },
-        mode: "onChange"
-    });
+    // const fileForm = useForm<SignUpStep3>({
+    //     resolver: zodResolver(signUpStep3Schema),
+    //     defaultValues: {
+    //         avatar: undefined,
+    //         coverImage: undefined
+    //     },
+    //     mode: "onChange"
+    // });
 
 
     const onSubmitStep1 = async (data: SignUpStep1) => {
@@ -199,7 +199,7 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
 
     // Watch for step 1 form changes
     useEffect(() => {
-        const subscription = form.watch((value, { name }) => {
+        const subscription = form.watch(() => {
             // Check validation status for each field
             const { fullName, username, email } = form.getValues();
 
@@ -315,9 +315,10 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
             toast.success(responseBody.message || "Registration successful! Your account has been created successfully.");
             setIsOpen(false);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Handle errors
-            toast.error(error.message || "There was a problem creating your account.");
+            const errorMessage = error instanceof Error ? error.message : "There was a problem creating your account.";
+            toast.error(errorMessage)
         } finally {
             setIsSubmitting(false);
         }
@@ -542,7 +543,7 @@ export function SignUpBox({ className, ...props }: React.ComponentProps<"div">) 
                             )}
 
                             <p className="text-sm text-muted-foreground text-center">
-                                Didn't receive a code? {' '}
+                                Didn&apos;t receive a code? {' '}
                                 <button
                                     className="text-blue-500 hover:underline"
                                     onClick={resendOTP}

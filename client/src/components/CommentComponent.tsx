@@ -170,7 +170,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
                 const enrichedComments = await Promise.all(
                     commentsData.map(async (comment: Comment) => {
                         // If owner is a string (just the ID), fetch user details
-                        let updatedComment = { ...comment };
+                        const updatedComment = { ...comment };
 
                         if (typeof comment.owner === 'string') {
                             const userProfile = await fetchUserProfile(comment.owner);
@@ -412,7 +412,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
     const formatCommentDate = (dateString: string): string => {
         try {
             return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-        } catch (err) {
+        } catch (_) {
             return 'recently';
         }
     };

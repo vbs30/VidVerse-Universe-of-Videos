@@ -1,5 +1,5 @@
 import React from 'react';
-import { Github, Linkedin, Mail, Code, Database, Server, Globe, BookOpen, Award } from 'lucide-react';
+import { Github, Linkedin, Mail, Globe } from 'lucide-react';
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 
@@ -24,7 +24,7 @@ const AboutPage = () => {
                         <div className="w-full">
                             <div className="prose dark:prose-invert max-w-none">
                                 <p className="text-lg leading-relaxed text-justify">
-                                    Hi! I'm Vinayak Suryavanshi, a Full Stack Developer skilled in Data Structures and Algorithms with Java,
+                                    Hi! I am Vinayak Suryavanshi, a Full Stack Developer skilled in Data Structures and Algorithms with Java,
                                     Full Stack Web Development (ReactJS, NodeJS, MySQL, MongoDB), Machine Learning with Python, and Docker.
                                 </p>
                             </div>

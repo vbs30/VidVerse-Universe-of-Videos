@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { PlayCircle, CheckCircle, User, Loader2 } from 'lucide-react';
+import { User, Loader2 } from 'lucide-react';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import VideoGallery from '@/components/VideoGallery';
 
@@ -105,7 +105,7 @@ export default function SearchPage() {
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
             <div className="mb-8">
-                <h1 className="text-2xl font-bold mb-6">Search Results for "{query}"</h1>
+                <h1 className="text-2xl font-bold mb-6">Search Results for &quot;{query}&quot;</h1>
 
                 {isLoading ? (
                     <div className="flex items-center justify-center p-12">
@@ -138,7 +138,7 @@ export default function SearchPage() {
                             <TabPanel>
                                 {videos.length === 0 && channels.length === 0 ? (
                                     <div className="text-center p-8 bg-gray-100 dark:bg-neutral-800 rounded-lg">
-                                        <h2 className="text-xl font-medium mb-2">No results found for "{query}"</h2>
+                                        <h2 className="text-xl font-medium mb-2">No results found for &quot;{query}&quot;</h2>
                                     </div>
                                 ) : (
                                     <>
@@ -190,7 +190,7 @@ export default function SearchPage() {
                             <TabPanel>
                                 {videos.length === 0 ? (
                                     <div className="text-center p-8 bg-gray-100 dark:bg-neutral-800 rounded-lg">
-                                        <h2 className="text-xl font-medium mb-2">No videos found for "{query}"</h2>
+                                        <h2 className="text-xl font-medium mb-2">No videos found for &quot;{query}&quot;</h2>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -204,7 +204,7 @@ export default function SearchPage() {
                             <TabPanel>
                                 {channels.length === 0 ? (
                                     <div className="text-center p-8 bg-gray-100 dark:bg-neutral-800 rounded-lg">
-                                        <h2 className="text-xl font-medium mb-2">No channels found for "{query}"</h2>
+                                        <h2 className="text-xl font-medium mb-2">No channels found for &quot;{query}&quot;</h2>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -243,14 +243,14 @@ function VideoCard({ video }: { video: Video }) {
     };
 
     // Format the full date
-    const formatDate = (dateString: string): string => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    };
+    // const formatDate = (dateString: string): string => {
+    //     const date = new Date(dateString);
+    //     return date.toLocaleDateString('en-US', {
+    //         year: 'numeric',
+    //         month: 'long',
+    //         day: 'numeric'
+    //     });
+    // };
 
     // Format view count
     const formatViews = (views: number): string => {

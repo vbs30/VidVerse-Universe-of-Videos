@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { Clock, ThumbsUp } from "lucide-react";
+import { ThumbsUp } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -245,7 +245,7 @@ const LikedVideosPage: React.FC = () => {
                         <div className="flex items-center gap-2 mb-6">
                             <ThumbsUp size={24} className="text-red-600" />
                             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                Videos you've liked
+                                Videos you&apos;ve liked
                             </h2>
                         </div>
 

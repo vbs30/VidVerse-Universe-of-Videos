@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from "sonner"
-import { User, CheckCircle, XCircle, Loader2, Lock } from 'lucide-react'
+import { Loader2, Lock } from 'lucide-react'
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -22,7 +22,6 @@ import { useAuth } from '@/contexts/AuthContext' // Import the useAuth hook
 
 export function LoginBox({
     className,
-    children,
     ...props
 }: React.ComponentPropsWithoutRef<typeof AlertDialogTrigger>) {
     const [isOpen, setIsOpen] = useState(false)

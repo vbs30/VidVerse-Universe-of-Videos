@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { Bell, BellOff, ChevronDown, Users } from "lucide-react";
+import { ChevronDown, Users } from "lucide-react";
 import VideoGallery from "@/components/VideoGallery";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext"; // Import useAuth hook
@@ -56,7 +56,7 @@ interface VideosResponse {
 
 interface SubscriptionResponse {
   statusCode: number;
-  data: any;
+  data: string;
   message: string;
   success: boolean;
 }
@@ -76,7 +76,6 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [totalVideos, setTotalVideos] = useState(0);
   const [activeTab, setActiveTab] = useState("videos");
-  const [notifications, setNotifications] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
 
@@ -464,7 +463,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
                     </div>
                     <h3 className="text-xl font-medium text-gray-900 dark:text-white">No videos uploaded</h3>
                     <p className="mt-2 text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                      This channel hasn't uploaded any videos yet. Check back later for new content.
+                      This channel hasn&apos;t uploaded any videos yet. Check back later for new content.
                     </p>
                   </div>
                 )}
@@ -480,7 +479,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
                 </div>
                 <h3 className="text-xl font-medium text-gray-900 dark:text-white">No playlists</h3>
                 <p className="mt-2 text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                  This channel hasn't created any playlists yet.
+                  This channel hasn&apos;t created any playlists yet.
                 </p>
               </div>
             )}

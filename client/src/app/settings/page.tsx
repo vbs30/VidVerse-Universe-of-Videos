@@ -10,7 +10,6 @@ import {
     LockKeyhole,
     ImageIcon,
     Upload,
-    Settings as SettingsIcon
 } from 'lucide-react'
 
 const SettingsPage: React.FC = () => {
@@ -59,7 +58,7 @@ const SettingsPage: React.FC = () => {
                 toast.error(data.message || 'Failed to change password')
             }
         } catch (error) {
-            toast.error('Something went wrong')
+            toast.error('Something went wrong' + error)
         }
     }
 
@@ -95,7 +94,7 @@ const SettingsPage: React.FC = () => {
                 toast.error(data.message || 'Failed to update avatar')
             }
         } catch (error) {
-            toast.error('Something went wrong')
+            toast.error('Something went wrong' + error)
         }
     }
 
@@ -131,7 +130,7 @@ const SettingsPage: React.FC = () => {
                 toast.error(data.message || 'Failed to update cover image')
             }
         } catch (error) {
-            toast.error('Something went wrong')
+            toast.error('Something went wrong' + error)
         }
     }
 

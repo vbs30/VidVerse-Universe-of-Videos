@@ -131,7 +131,7 @@ const SubscriptionsPage = () => {
                         </svg>
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">No Subscriptions</h2>
-                    <p className="mt-2 text-gray-600 dark:text-gray-300 mb-6">You haven't subscribed to any channels yet.</p>
+                    <p className="mt-2 text-gray-600 dark:text-gray-300 mb-6">You haven&apos;t subscribed to any channels yet.</p>
                     <Link href="/explore" className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                         Explore Channels
                     </Link>
@@ -155,7 +155,7 @@ const SubscriptionsPage = () => {
             <div className="flex-1 overflow-y-auto scrollbar-hide">
                 <div className="container mx-auto py-4 px-4 sm:px-6 lg:px-8">
                     <p className="text-gray-600 dark:text-gray-400 mb-6">
-                        You're subscribed to {subscriptions.countofChannels} channel{subscriptions.countofChannels !== 1 ? 's' : ''}
+                        You&apos;re subscribed to {subscriptions.countofChannels} channel{subscriptions.countofChannels !== 1 ? 's' : ''}
                     </p>
 
                     <div className="flex flex-col space-y-4 max-w-3xl mx-auto pb-8">

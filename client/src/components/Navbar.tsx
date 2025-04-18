@@ -9,9 +9,8 @@ import { LoginBox } from './LoginBox';
 import { useAuth } from '@/contexts/AuthContext';
 import { SearchComponent } from './SearchComponent';
 
-export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
+export function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [mounted, setMounted] = useState(false);
 
     const { theme, setTheme } = useTheme();
     const isDarkTheme = theme === 'dark';
@@ -22,10 +21,6 @@ export function Navbar({ className, ...props }: React.ComponentProps<"div">) {
     const toggleTheme = () => setTheme(isDarkTheme ? 'light' : 'dark');
 
     const menuRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     // Close dropdown when clicking outside
     useEffect(() => {
