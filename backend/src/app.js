@@ -6,6 +6,9 @@ const app = express()
 
 app.use(cors({
     origin: process.env.CORS_ORIGIN,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
 }))
 
