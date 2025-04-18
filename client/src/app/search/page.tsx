@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { User, Loader2 } from 'lucide-react';
@@ -9,7 +9,7 @@ import VideoGallery from '@/components/VideoGallery';
 
 // Types for the API responses
 interface Channel {
-    _id: string; // Let's ensure we handle this correctly
+    _id: string;
     username: string;
     email: string;
     avatar: string;
@@ -22,7 +22,7 @@ interface Channel {
 }
 
 interface Video {
-    _id: string; // Let's ensure we handle this correctly
+    _id: string;
     videoFile: string;
     thumbnail: string;
     title: string;
@@ -36,7 +36,18 @@ interface Video {
     __v: number;
 }
 
-export default function SearchPage() {
+// Loading component for Suspense fallback
+function SearchPageLoading() {
+    return (
+        <div className="flex items-center justify-center p-12">
+            <Loader2 className="w-8 h-8 animate-spin mr-2" />
+            Loading search results...
+        </div>
+    );
+}
+
+// Component that uses useSearchParams
+function SearchPageContent() {
     const searchParams = useSearchParams();
     const query = searchParams.get('q') || '';
     const [activeTab, setActiveTab] = useState(0);
@@ -242,16 +253,6 @@ function VideoCard({ video }: { video: Video }) {
         return `${Math.floor(diffInDays / 365)} years ago`;
     };
 
-    // Format the full date
-    // const formatDate = (dateString: string): string => {
-    //     const date = new Date(dateString);
-    //     return date.toLocaleDateString('en-US', {
-    //         year: 'numeric',
-    //         month: 'long',
-    //         day: 'numeric'
-    //     });
-    // };
-
     // Format view count
     const formatViews = (views: number): string => {
         if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
@@ -259,7 +260,6 @@ function VideoCard({ video }: { video: Video }) {
         return views.toString();
     };
 
-    // Using index instead of ID for the link since we're not sure if _id exists
     return (
         <Link href={`/videos/${video._id}`} className="block bg-white dark:bg-neutral-900 rounded-lg overflow-hidden">
             <VideoGallery
@@ -277,7 +277,6 @@ function VideoCard({ video }: { video: Video }) {
 
 // Channel Card Component
 function ChannelCard({ channel }: { channel: Channel }) {
-    // Using index instead of ID for the link since we're not sure if _id exists
     return (
         <Link href={`/channel/${channel.username}`} className="block bg-white dark:bg-neutral-800 rounded-lg p-6 text-center hover:shadow-md transition-shadow">
             <div className="flex justify-center mb-4">
@@ -297,5 +296,14 @@ function ChannelCard({ channel }: { channel: Channel }) {
                 </div>
             )}
         </Link>
+    );
+}
+
+// Main export component with Suspense boundary
+export default function SearchPage() {
+    return (
+        <Suspense fallback={<SearchPageLoading />}>
+            <SearchPageContent />
+        </Suspense>
     );
 }
