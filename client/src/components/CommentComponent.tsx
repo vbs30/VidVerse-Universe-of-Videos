@@ -412,8 +412,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
     const formatCommentDate = (dateString: string): string => {
         try {
             return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-        } catch (_) {
-            return 'recently';
+        } catch (err) {
+            console.log(err)
+            return 'Unknown date'
         }
     };
 

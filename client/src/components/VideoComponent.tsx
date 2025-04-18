@@ -380,7 +380,8 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
     const formatDate = (dateString: string) => {
         try {
             return format(new Date(dateString), 'MMMM dd, yyyy')
-        } catch (_) {
+        } catch (err) {
+            console.log(err)
             return 'Unknown date'
         }
     }

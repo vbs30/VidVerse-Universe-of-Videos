@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, User, UploadCloud, XCircle, Check, AlertCircle, Loader2 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot, } from "@/components/ui/input-otp";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { signUpStep1Schema, type SignUpStep1, signUpStep3Schema, type SignUpStep3, signUpStep4Schema, type SignUpStep4 } from "../schemas/signup.schemas";
+import { signUpStep1Schema, type SignUpStep1, signUpStep3Schema, signUpStep4Schema, type SignUpStep4 } from "../schemas/signup.schemas";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
