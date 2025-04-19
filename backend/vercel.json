@@ -13,6 +13,16 @@
     ],
     "routes": [
         {
+            "src": "/api/(.*)",
+            "headers": {
+                "Access-Control-Allow-Origin": "https://vidverse-universe-of-videos.vercel.app",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization, cache-control, Cache-Control, x-requested-with",
+                "Access-Control-Allow-Credentials": "true"
+            },
+            "continue": true
+        },
+        {
             "src": "/(.*)",
             "dest": "src/index.js"
         }

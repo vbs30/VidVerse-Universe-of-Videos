@@ -11,6 +11,8 @@ app.use(cors({
     credentials: true,
 }))
 
+app.options('*', cors());
+
 //data can be taken as json, earlier body-parser was needed, now express does it by itself
 app.use(express.json({
     limit: "20kb"
