@@ -5,8 +5,8 @@ import cookieParser from "cookie-parser";
 const app = express()
 
 app.use(cors({
-    origin: ["https://vidverse-universe-of-videos.vercel.app", "http://localhost:3000"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    origin: ["http://localhost:3000"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ['Content-Type', 'Authorization', 'cache-control', 'Cache-Control', 'x-requested-with'],
     credentials: true,
 }))
