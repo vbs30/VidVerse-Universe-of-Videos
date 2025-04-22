@@ -200,7 +200,7 @@ Every contribution, no matter how small, makes a difference. We appreciate your 
 ## 📬 Contact
 
 If you have any questions, suggestions, or feedback, feel free to reach out to the project owner:
-- **Email**: [your-email@example.com](mailto:your-email@example.com)
-- **GitHub**: [Your GitHub Profile](https://github.com/your-profile)
+- **Email**: [vbs02002@gmail.com](mailto:vbs02002@gmail.com)
+- **GitHub**: [vbs30](https://github.com/vbs30)
 
 We'd love to hear from you! 💬
