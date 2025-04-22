@@ -1,4 +1,4 @@
-# 🌌 VidVerse
+#  VidVerse
 ## The Universe of Videos
 
 VidVerse is a cutting-edge video platform designed to revolutionize the way you experience video content. With a robust architecture, seamless performance, and state-of-the-art technologies, VidVerse offers a fast, reliable, and scalable solution for video streaming and management.
@@ -56,6 +56,39 @@ VidVerse is not just another video platform; it is built with a focus on:
 - **Reliability**: Robust architecture ensures consistent and error-free operation.
 - **Scalability**: Designed to grow with your needs, handling increasing traffic and data effortlessly.
 - **User Experience**: Thoughtfully crafted features and seamless authentication for a superior user journey.
+
+---
+
+## 🖥️ Installation & Setup  
+
+### Prerequisites  
+- Node.js (v16 or higher)  
+- MongoDB 
+
+### Steps  
+
+1. **Clone the Repository**  
+    ```bash  
+    git clone https://github.com/your-username/VidVerse.git  
+    cd VidVerse  
+    ```  
+
+2. **Backend Setup**  
+    ```bash  
+    cd backend  
+    npm install  
+    npm start  
+    ```  
+
+3. **Frontend Setup**  
+    ```bash  
+    cd frontend  
+    npm install  
+    npm run dev  
+    ```  
+
+4. **Environment Variables**  
+    Create `.env` files in both `backend` and `frontend` directories with the required configurations.  
 
 ---
 
