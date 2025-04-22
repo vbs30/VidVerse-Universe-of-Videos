@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useReducer } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { History, Clock } from "lucide-react";
@@ -29,12 +29,49 @@ interface WatchHistoryResponse {
     success: boolean;
 }
 
+// Define the state type
+interface State {
+    loading: boolean;
+    error: string | null;
+    watchHistory: Video[];
+    authChecked: boolean;
+}
+
+// Define action types
+type Action =
+    | { type: 'SET_AUTH_CHECKED' }
+    | { type: 'FETCH_START' }
+    | { type: 'FETCH_SUCCESS', payload: Video[] }
+    | { type: 'FETCH_ERROR', payload: string };
+
+// Define the reducer function
+const reducer = (state: State, action: Action): State => {
+    switch (action.type) {
+        case 'SET_AUTH_CHECKED':
+            return { ...state, authChecked: true };
+        case 'FETCH_START':
+            return { ...state, loading: true, error: null };
+        case 'FETCH_SUCCESS':
+            return { ...state, loading: false, watchHistory: action.payload, error: null };
+        case 'FETCH_ERROR':
+            return { ...state, loading: false, error: action.payload };
+        default:
+            return state;
+    }
+};
+
 const WatchHistoryPage: React.FC = () => {
     const { isAuthenticated, user } = useAuth();
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [watchHistory, setWatchHistory] = useState<Video[]>([]);
-    const [authChecked, setAuthChecked] = useState(false);
+
+    // Initialize state with useReducer
+    const [state, dispatch] = useReducer(reducer, {
+        loading: true,
+        error: null,
+        watchHistory: [],
+        authChecked: false
+    });
+
+    const { loading, error, watchHistory, authChecked } = state;
 
     // Format duration
     const formatDuration = (duration: string): string => {
@@ -117,7 +154,7 @@ const WatchHistoryPage: React.FC = () => {
     useEffect(() => {
         // Set authChecked to true once user and isAuthenticated have been determined
         if (user !== undefined || isAuthenticated !== undefined) {
-            setAuthChecked(true);
+            dispatch({ type: 'SET_AUTH_CHECKED' });
         }
     }, [user, isAuthenticated]);
 
@@ -129,14 +166,14 @@ const WatchHistoryPage: React.FC = () => {
 
         const fetchWatchHistory = async () => {
             if (!isAuthenticated) {
-                setLoading(false);
+                dispatch({ type: 'FETCH_SUCCESS', payload: [] });
                 return;
             }
 
             try {
-                setLoading(true);
+                dispatch({ type: 'FETCH_START' });
 
-                const response = await fetch('https://vidverse-backend.vercel.app/api/v1/users/watch-history', {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/watch-history`, {
                     credentials: 'include',
                 });
 
@@ -150,13 +187,12 @@ const WatchHistoryPage: React.FC = () => {
                     throw new Error(data.message || "Failed to load watch history");
                 }
 
-                setWatchHistory(data.data);
+                dispatch({ type: 'FETCH_SUCCESS', payload: data.data });
             } catch (err) {
                 console.error("Error fetching watch history:", err);
-                setError(err instanceof Error ? err.message : "An unknown error occurred");
+                const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+                dispatch({ type: 'FETCH_ERROR', payload: errorMessage });
                 toast.error("Failed to load watch history");
-            } finally {
-                setLoading(false);
             }
         };
 

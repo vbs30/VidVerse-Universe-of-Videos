@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -22,21 +22,68 @@ interface SubscriptionData {
     channels: Channel[];
 }
 
+// Define state type
+interface SubscriptionState {
+    subscriptions: SubscriptionData | null;
+    loading: boolean;
+    error: string | null;
+}
+
+// Define action types
+type SubscriptionAction =
+    | { type: 'FETCH_START' }
+    | { type: 'FETCH_SUCCESS'; payload: SubscriptionData }
+    | { type: 'FETCH_ERROR'; payload: string };
+
+// Create initial state
+const initialState: SubscriptionState = {
+    subscriptions: null,
+    loading: true,
+    error: null
+};
+
+// Create reducer function
+const subscriptionReducer = (state: SubscriptionState, action: SubscriptionAction): SubscriptionState => {
+    switch (action.type) {
+        case 'FETCH_START':
+            return {
+                ...state,
+                loading: true,
+                error: null
+            };
+        case 'FETCH_SUCCESS':
+            return {
+                subscriptions: action.payload,
+                loading: false,
+                error: null
+            };
+        case 'FETCH_ERROR':
+            return {
+                ...state,
+                loading: false,
+                error: action.payload
+            };
+        default:
+            return state;
+    }
+};
+
 const SubscriptionsPage = () => {
     const { user, isAuthenticated } = useAuth();
-    const [subscriptions, setSubscriptions] = useState<SubscriptionData | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [state, dispatch] = useReducer(subscriptionReducer, initialState);
+    const { subscriptions, loading, error } = state;
 
     useEffect(() => {
         const fetchSubscriptions = async () => {
             if (!user) {
-                setLoading(false);
+                dispatch({ type: 'FETCH_ERROR', payload: 'User not found' });
                 return;
             }
 
+            dispatch({ type: 'FETCH_START' });
+
             try {
-                const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/subscription/u/${user.username}`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/subscription/u/${user.username}`, {
                     method: 'GET',
                     credentials: 'include',
                     headers: {
@@ -47,22 +94,20 @@ const SubscriptionsPage = () => {
                 const data = await response.json();
 
                 if (data.success) {
-                    setSubscriptions(data.data[0]);
+                    dispatch({ type: 'FETCH_SUCCESS', payload: data.data[0] });
                 } else {
-                    setError('Failed to fetch subscriptions');
+                    dispatch({ type: 'FETCH_ERROR', payload: 'Failed to fetch subscriptions' });
                 }
             } catch (err) {
-                setError('An error occurred while fetching subscriptions');
+                dispatch({ type: 'FETCH_ERROR', payload: 'An error occurred while fetching subscriptions' });
                 console.error('Subscription fetch error:', err);
-            } finally {
-                setLoading(false);
             }
         };
 
         if (isAuthenticated) {
             fetchSubscriptions();
         } else {
-            setLoading(false);
+            dispatch({ type: 'FETCH_ERROR', payload: 'Authentication required' });
         }
     }, [user, isAuthenticated]);
 

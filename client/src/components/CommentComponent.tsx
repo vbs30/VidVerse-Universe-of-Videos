@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useReducer, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { MoreVertical, Trash2, Edit, Send, ChevronUp, ChevronDown, ThumbsUp } from 'lucide-react';
 import { toast } from 'sonner';
@@ -36,20 +36,119 @@ interface CommentSectionProps {
     videoId: string;
 }
 
+// Define state type
+interface CommentState {
+    comments: Comment[];
+    commentContent: string;
+    loading: boolean;
+    error: string | null;
+    editingCommentId: string | null;
+    editContent: string;
+    expandedMenuId: string | null;
+    showAllComments: boolean;
+    commentCount: number;
+    likeStates: { [key: string]: boolean };
+    likeCounts: { [key: string]: number };
+    isLiking: { [key: string]: boolean };
+}
+
+// Define action types
+type Action =
+    | { type: 'SET_COMMENTS', payload: Comment[] }
+    | { type: 'SET_COMMENT_CONTENT', payload: string }
+    | { type: 'SET_LOADING', payload: boolean }
+    | { type: 'SET_ERROR', payload: string | null }
+    | { type: 'SET_EDITING_COMMENT', payload: { id: string | null, content: string } }
+    | { type: 'TOGGLE_MENU', payload: string }
+    | { type: 'TOGGLE_SHOW_COMMENTS' }
+    | { type: 'SET_COMMENT_COUNT', payload: number }
+    | { type: 'UPDATE_LIKE_STATE', payload: { commentId: string, isLiked: boolean } }
+    | { type: 'UPDATE_LIKE_COUNT', payload: { commentId: string, count: number } }
+    | { type: 'SET_IS_LIKING', payload: { commentId: string, isLiking: boolean } }
+    | { type: 'DELETE_COMMENT', payload: string }
+    | { type: 'RESET_EDIT_STATE' };
+
+// Define reducer function
+const commentReducer = (state: CommentState, action: Action): CommentState => {
+    switch (action.type) {
+        case 'SET_COMMENTS':
+            return { ...state, comments: action.payload };
+        case 'SET_COMMENT_CONTENT':
+            return { ...state, commentContent: action.payload };
+        case 'SET_LOADING':
+            return { ...state, loading: action.payload };
+        case 'SET_ERROR':
+            return { ...state, error: action.payload };
+        case 'SET_EDITING_COMMENT':
+            return {
+                ...state,
+                editingCommentId: action.payload.id,
+                editContent: action.payload.content
+            };
+        case 'TOGGLE_MENU':
+            return {
+                ...state,
+                expandedMenuId: state.expandedMenuId === action.payload ? null : action.payload
+            };
+        case 'TOGGLE_SHOW_COMMENTS':
+            return { ...state, showAllComments: !state.showAllComments };
+        case 'SET_COMMENT_COUNT':
+            return { ...state, commentCount: action.payload };
+        case 'UPDATE_LIKE_STATE':
+            return {
+                ...state,
+                likeStates: {
+                    ...state.likeStates,
+                    [action.payload.commentId]: action.payload.isLiked
+                }
+            };
+        case 'UPDATE_LIKE_COUNT':
+            return {
+                ...state,
+                likeCounts: {
+                    ...state.likeCounts,
+                    [action.payload.commentId]: action.payload.count
+                }
+            };
+        case 'SET_IS_LIKING':
+            return {
+                ...state,
+                isLiking: {
+                    ...state.isLiking,
+                    [action.payload.commentId]: action.payload.isLiking
+                }
+            };
+        case 'DELETE_COMMENT':
+            return {
+                ...state,
+                comments: state.comments.filter(comment => comment._id !== action.payload),
+                commentCount: state.commentCount - 1
+            };
+        case 'RESET_EDIT_STATE':
+            return { ...state, editingCommentId: null, editContent: '' };
+        default:
+            return state;
+    }
+};
+
 const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
     const { user, isAuthenticated } = useAuth();
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [commentContent, setCommentContent] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-    const [editContent, setEditContent] = useState('');
-    const [expandedMenuId, setExpandedMenuId] = useState<string | null>(null);
-    const [showAllComments, setShowAllComments] = useState(true);
-    const [commentCount, setCommentCount] = useState(0);
-    const [likeStates, setLikeStates] = useState<{ [key: string]: boolean }>({});
-    const [likeCounts, setLikeCounts] = useState<{ [key: string]: number }>({});
-    const [isLiking, setIsLiking] = useState<{ [key: string]: boolean }>({});
+    const initialState: CommentState = {
+        comments: [],
+        commentContent: '',
+        loading: true,
+        error: null,
+        editingCommentId: null,
+        editContent: '',
+        expandedMenuId: null,
+        showAllComments: true,
+        commentCount: 0,
+        likeStates: {},
+        likeCounts: {},
+        isLiking: {}
+    };
+
+    const [state, dispatch] = useReducer(commentReducer, initialState);
     const menuRef = useRef<HTMLDivElement>(null);
     const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -62,7 +161,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
         // Add click outside handler for dropdown menu
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setExpandedMenuId(null);
+                dispatch({ type: 'SET_EDITING_COMMENT', payload: { id: null, content: '' } });
             }
         };
 
@@ -72,15 +171,15 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
 
     // Focus on textarea when editing starts
     useEffect(() => {
-        if (editingCommentId && commentInputRef.current) {
+        if (state.editingCommentId && commentInputRef.current) {
             commentInputRef.current.focus();
         }
-    }, [editingCommentId]);
+    }, [state.editingCommentId]);
 
     // Fetch user profile data
     const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
         try {
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/users/get-user-profile/${userId}`);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/get-user-profile/${userId}`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch user profile');
@@ -103,7 +202,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
         if (!isAuthenticated) return false;
 
         try {
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/likes/check-comment-likes/${commentId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/likes/check-comment-likes/${commentId}`, {
                 credentials: 'include', // Important to include credentials
                 cache: 'no-store', // Prevent caching to always get fresh data
                 headers: {
@@ -126,7 +225,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
     // Get comment like count
     const getCommentLikeCount = async (commentId: string) => {
         try {
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/likes/countComment/${commentId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/likes/countComment/${commentId}`, {
                 cache: 'no-store', // Prevent caching
                 headers: {
                     'Cache-Control': 'no-cache' // Additional cache control
@@ -148,8 +247,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
     // Fetch comments from API and enrich with user profile data
     const fetchComments = async () => {
         try {
-            setLoading(true);
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/comments/c/${videoId}`, {
+            dispatch({ type: 'SET_LOADING', payload: true });
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/comments/c/${videoId}`, {
                 cache: 'no-store', // Prevent caching
                 headers: {
                     'Cache-Control': 'no-cache' // Additional cache control
@@ -195,21 +294,35 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
                     })
                 );
 
-                setComments(enrichedComments);
-                setCommentCount(enrichedComments.length);
-                setLikeStates(newLikeStates);
-                setLikeCounts(newLikeCounts);
+                dispatch({ type: 'SET_COMMENTS', payload: enrichedComments });
+                dispatch({ type: 'SET_COMMENT_COUNT', payload: enrichedComments.length });
+
+                // Update like states and counts
+                Object.entries(newLikeStates).forEach(([commentId, isLiked]) => {
+                    dispatch({
+                        type: 'UPDATE_LIKE_STATE',
+                        payload: { commentId, isLiked }
+                    });
+                });
+
+                Object.entries(newLikeCounts).forEach(([commentId, count]) => {
+                    dispatch({
+                        type: 'UPDATE_LIKE_COUNT',
+                        payload: { commentId, count }
+                    });
+                });
             } else {
-                setComments([]);
-                setCommentCount(0);
-                setLikeStates({});
-                setLikeCounts({});
+                dispatch({ type: 'SET_COMMENTS', payload: [] });
+                dispatch({ type: 'SET_COMMENT_COUNT', payload: 0 });
             }
         } catch (err) {
             console.error('Error fetching comments:', err);
-            setError(err instanceof Error ? err.message : 'An unknown error occurred');
+            dispatch({
+                type: 'SET_ERROR',
+                payload: err instanceof Error ? err.message : 'An unknown error occurred'
+            });
         } finally {
-            setLoading(false);
+            dispatch({ type: 'SET_LOADING', payload: false });
         }
     };
 
@@ -222,26 +335,26 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
             return;
         }
 
-        if (!commentContent.trim()) {
+        if (!state.commentContent.trim()) {
             toast.error('Comment cannot be empty');
             return;
         }
 
         try {
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/comments/c/${videoId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/comments/c/${videoId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: JSON.stringify({ content: commentContent.trim() }),
+                body: JSON.stringify({ content: state.commentContent.trim() }),
             });
 
             const data = await response.json();
 
             if (data.success) {
                 toast.success('Comment added successfully');
-                setCommentContent('');
+                dispatch({ type: 'SET_COMMENT_CONTENT', payload: '' });
                 fetchComments(); // Refresh comments
             } else {
                 toast.error(data.message || 'Failed to add comment');
@@ -254,26 +367,26 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
 
     // Handle comment update
     const handleUpdateComment = async (commentId: string) => {
-        if (!editContent.trim()) {
+        if (!state.editContent.trim()) {
             toast.error('Comment cannot be empty');
             return;
         }
 
         try {
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/comments/u/${commentId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/comments/u/${commentId}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: JSON.stringify({ content: editContent.trim() }),
+                body: JSON.stringify({ content: state.editContent.trim() }),
             });
 
             const data = await response.json();
 
             if (data.success) {
                 toast.success('Comment updated successfully');
-                setEditingCommentId(null);
+                dispatch({ type: 'RESET_EDIT_STATE' });
                 fetchComments(); // Refresh comments
             } else {
                 toast.error(data.message || 'Failed to update comment');
@@ -291,7 +404,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
         }
 
         try {
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/comments/u/${commentId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/comments/u/${commentId}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });
@@ -300,8 +413,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
 
             if (data.success) {
                 toast.success('Comment deleted successfully');
-                setComments(comments.filter(comment => comment._id !== commentId));
-                setCommentCount(prev => prev - 1);
+                dispatch({ type: 'DELETE_COMMENT', payload: commentId });
             } else {
                 toast.error(data.message || 'Failed to delete comment');
             }
@@ -319,32 +431,35 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
         }
 
         // If already processing a like action for this comment, return
-        if (isLiking[commentId]) return;
+        if (state.isLiking[commentId]) return;
 
         // Set up optimistic UI update
-        const currentLiked = likeStates[commentId] || false;
-        const currentCount = likeCounts[commentId] || 0;
+        const currentLiked = state.likeStates[commentId] || false;
+        const currentCount = state.likeCounts[commentId] || 0;
 
         // Update local state immediately (optimistic update)
-        setLikeStates(prev => ({
-            ...prev,
-            [commentId]: !currentLiked
-        }));
+        dispatch({
+            type: 'UPDATE_LIKE_STATE',
+            payload: { commentId, isLiked: !currentLiked }
+        });
 
-        setLikeCounts(prev => ({
-            ...prev,
-            [commentId]: !currentLiked ? currentCount + 1 : Math.max(currentCount - 1, 0)
-        }));
+        dispatch({
+            type: 'UPDATE_LIKE_COUNT',
+            payload: {
+                commentId,
+                count: !currentLiked ? currentCount + 1 : Math.max(currentCount - 1, 0)
+            }
+        });
 
         // Mark this comment as being processed
-        setIsLiking(prev => ({
-            ...prev,
-            [commentId]: true
-        }));
+        dispatch({
+            type: 'SET_IS_LIKING',
+            payload: { commentId, isLiking: true }
+        });
 
         try {
             // Use no-cache to prevent any caching issues
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/likes/toggle/c/${commentId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/likes/toggle/c/${commentId}`, {
                 method: 'POST',
                 credentials: 'include',
                 cache: 'no-store',
@@ -361,26 +476,26 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
                 const verifiedLikeStatus = await checkCommentLikeStatus(commentId);
                 const verifiedLikeCount = await getCommentLikeCount(commentId);
 
-                setLikeStates(prev => ({
-                    ...prev,
-                    [commentId]: verifiedLikeStatus
-                }));
+                dispatch({
+                    type: 'UPDATE_LIKE_STATE',
+                    payload: { commentId, isLiked: verifiedLikeStatus }
+                });
 
-                setLikeCounts(prev => ({
-                    ...prev,
-                    [commentId]: verifiedLikeCount
-                }));
+                dispatch({
+                    type: 'UPDATE_LIKE_COUNT',
+                    payload: { commentId, count: verifiedLikeCount }
+                });
             } else {
                 // Revert the optimistic update if the API call fails
-                setLikeStates(prev => ({
-                    ...prev,
-                    [commentId]: currentLiked
-                }));
+                dispatch({
+                    type: 'UPDATE_LIKE_STATE',
+                    payload: { commentId, isLiked: currentLiked }
+                });
 
-                setLikeCounts(prev => ({
-                    ...prev,
-                    [commentId]: currentCount
-                }));
+                dispatch({
+                    type: 'UPDATE_LIKE_COUNT',
+                    payload: { commentId, count: currentCount }
+                });
 
                 toast.error(data.message || 'Failed to update like status');
             }
@@ -388,23 +503,23 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
             console.error('Error toggling like:', err);
 
             // Revert the optimistic update if there's an error
-            setLikeStates(prev => ({
-                ...prev,
-                [commentId]: currentLiked
-            }));
+            dispatch({
+                type: 'UPDATE_LIKE_STATE',
+                payload: { commentId, isLiked: currentLiked }
+            });
 
-            setLikeCounts(prev => ({
-                ...prev,
-                [commentId]: currentCount
-            }));
+            dispatch({
+                type: 'UPDATE_LIKE_COUNT',
+                payload: { commentId, count: currentCount }
+            });
 
             toast.error('Failed to update like status. Please try again.');
         } finally {
             // Mark this comment as no longer being processed
-            setIsLiking(prev => ({
-                ...prev,
-                [commentId]: false
-            }));
+            dispatch({
+                type: 'SET_IS_LIKING',
+                payload: { commentId, isLiking: false }
+            });
         }
     };
 
@@ -420,20 +535,22 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
 
     // Handle starting edit mode
     const startEditing = (commentId: string, content: string) => {
-        setEditingCommentId(commentId);
-        setEditContent(content);
-        setExpandedMenuId(null);
+        dispatch({
+            type: 'SET_EDITING_COMMENT',
+            payload: { id: commentId, content }
+        });
+        dispatch({ type: 'TOGGLE_MENU', payload: '' }); // Close menu
     };
 
     // Toggle comment dropdown menu
     const toggleMenu = (commentId: string) => {
-        setExpandedMenuId(expandedMenuId === commentId ? null : commentId);
+        dispatch({ type: 'TOGGLE_MENU', payload: commentId });
     };
 
     // Auto-resize textarea as content grows
     const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const textarea = e.target;
-        setCommentContent(textarea.value);
+        dispatch({ type: 'SET_COMMENT_CONTENT', payload: textarea.value });
 
         // Reset height first
         textarea.style.height = 'auto';
@@ -477,16 +594,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
             {/* Comments Header */}
             <div className="mb-6 border-b dark:border-gray-700 pb-4">
                 <button
-                    onClick={() => setShowAllComments(!showAllComments)}
+                    onClick={() => dispatch({ type: 'TOGGLE_SHOW_COMMENTS' })}
                     className="flex items-center gap-2 font-medium text-lg text-gray-900 dark:text-white"
                 >
-                    {commentCount} Comments
-                    {showAllComments ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    {state.commentCount} Comments
+                    {state.showAllComments ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                 </button>
             </div>
 
             {/* Comment Input */}
-            {isAuthenticated && showAllComments && (
+            {isAuthenticated && state.showAllComments && (
                 <div className="mb-8">
                     <form onSubmit={handleSubmitComment} className="flex flex-col">
                         <div className="flex gap-3 mb-2">
@@ -506,7 +623,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
 
                             <div className="flex-1">
                                 <textarea
-                                    value={commentContent}
+                                    value={state.commentContent}
                                     onChange={handleTextareaChange}
                                     placeholder="Add a comment..."
                                     className="w-full min-h-[40px] bg-transparent border-b border-gray-300 dark:border-gray-700 focus:border-red-600 dark:focus:border-red-600 outline-none resize-none px-2 py-2 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
@@ -518,16 +635,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
                         <div className="flex justify-end gap-3 mt-2">
                             <button
                                 type="button"
-                                onClick={() => setCommentContent('')}
+                                onClick={() => dispatch({ type: 'SET_COMMENT_CONTENT', payload: '' })}
                                 className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                disabled={!commentContent.trim()}
+                                disabled={!state.commentContent.trim()}
                                 className={`px-4 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2
-                  ${commentContent.trim()
+                  ${state.commentContent.trim()
                                         ? 'bg-red-600 hover:bg-red-700 text-white'
                                         : 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed'}`}
                             >
@@ -539,15 +656,15 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
             )}
 
             {/* Comments List */}
-            {showAllComments && (
+            {state.showAllComments && (
                 <div className="space-y-6">
-                    {loading ? (
+                    {state.loading ? (
                         <div className="flex justify-center py-8">
                             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-600"></div>
                         </div>
-                    ) : error ? (
+                    ) : state.error ? (
                         <div className="text-center py-8">
-                            <p className="text-gray-600 dark:text-gray-400">{error}</p>
+                            <p className="text-gray-600 dark:text-gray-400">{state.error}</p>
                             <button
                                 onClick={fetchComments}
                                 className="mt-2 text-red-600 hover:text-red-700 dark:hover:text-red-500 font-medium"
@@ -555,7 +672,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
                                 Try Again
                             </button>
                         </div>
-                    ) : comments.length === 0 ? (
+                    ) : state.comments.length === 0 ? (
                         <div className="text-center py-12">
                             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 mb-4">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-8 h-8">
@@ -568,13 +685,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
                             </p>
                         </div>
                     ) : (
-                        comments.map((comment) => {
+                        state.comments.map((comment) => {
                             const ownerInfo = getCommentOwnerInfo(comment);
-                            const isCommentLiked = likeStates[comment._id] !== undefined
-                                ? likeStates[comment._id]
+                            const isCommentLiked = state.likeStates[comment._id] !== undefined
+                                ? state.likeStates[comment._id]
                                 : comment.isLiked || false;
-                            const commentLikeCount = likeCounts[comment._id] !== undefined
-                                ? likeCounts[comment._id]
+                            const commentLikeCount = state.likeCounts[comment._id] !== undefined
+                                ? state.likeCounts[comment._id]
                                 : comment.likeCount || 0;
 
                             return (
@@ -621,7 +738,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
                                                         <MoreVertical size={18} />
                                                     </button>
 
-                                                    {expandedMenuId === comment._id && (
+                                                    {state.expandedMenuId === comment._id && (
                                                         <div className="absolute right-0 mt-1 w-40 bg-white dark:bg-gray-900 shadow-lg rounded-md py-1 z-10 border border-gray-200 dark:border-gray-700">
                                                             <button
                                                                 onClick={() => startEditing(comment._id, comment.content)}
@@ -644,19 +761,19 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
                                         </div>
 
                                         {/* Edit Mode */}
-                                        {editingCommentId === comment._id ? (
+                                        {state.editingCommentId === comment._id ? (
                                             <div className="mt-1">
                                                 <textarea
                                                     ref={commentInputRef}
-                                                    value={editContent}
-                                                    onChange={(e) => setEditContent(e.target.value)}
+                                                    value={state.editContent}
+                                                    onChange={(e) => dispatch({ type: 'SET_EDITING_COMMENT', payload: { id: comment._id, content: e.target.value } })}
                                                     className="w-full min-h-[60px] bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 outline-none focus:border-red-600 dark:focus:border-red-600"
                                                     rows={2}
                                                 />
 
                                                 <div className="flex justify-end gap-2 mt-2">
                                                     <button
-                                                        onClick={() => setEditingCommentId(null)}
+                                                        onClick={() => dispatch({ type: 'RESET_EDIT_STATE' })}
                                                         className="px-3 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
                                                     >
                                                         Cancel
@@ -679,11 +796,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
                                                 <div className="mt-2 flex items-center">
                                                     <button
                                                         onClick={() => handleToggleLike(comment._id)}
-                                                        disabled={isLiking[comment._id]}
+                                                        disabled={state.isLiking[comment._id]}
                                                         className={`flex items-center gap-1 px-2 py-1 rounded-full text-sm ${isCommentLiked
                                                                 ? 'text-neutral-800 dark:text-white'
                                                                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                                            } transition-colors ${isLiking[comment._id] ? 'opacity-50 cursor-not-allowed' : ''
+                                                            } transition-colors ${state.isLiking[comment._id] ? 'opacity-50 cursor-not-allowed' : ''
                                                             }`}
                                                     >
                                                         <ThumbsUp
@@ -704,7 +821,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ videoId }) => {
             )}
 
             {/* Login prompt if not authenticated */}
-            {!isAuthenticated && showAllComments && (
+            {!isAuthenticated && state.showAllComments && (
                 <div className="border-t border-gray-200 dark:border-gray-800 pt-4 mt-4">
                     <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg text-center">
                         <p className="text-gray-700 dark:text-gray-300">

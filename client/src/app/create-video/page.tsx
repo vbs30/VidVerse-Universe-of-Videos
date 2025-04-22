@@ -1,38 +1,148 @@
 'use client'
 
-import React, { useState, useRef, ChangeEvent, FormEvent } from 'react';
+import React, { useReducer, useRef, ChangeEvent, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Camera, Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 
+// Define the state type
+type State = {
+    title: string;
+    description: string;
+    videoFile: File | null;
+    thumbnailFile: File | null;
+    videoPreview: string;
+    thumbnailPreview: string;
+    loading: boolean;
+    error: string;
+    success: boolean;
+    uploadProgress: number;
+    authLoading: boolean;
+};
+
+// Define the action types
+type Action =
+    | { type: 'SET_TITLE'; payload: string }
+    | { type: 'SET_DESCRIPTION'; payload: string }
+    | { type: 'SET_VIDEO_FILE'; payload: File }
+    | { type: 'SET_THUMBNAIL_FILE'; payload: File }
+    | { type: 'REMOVE_VIDEO' }
+    | { type: 'REMOVE_THUMBNAIL' }
+    | { type: 'START_UPLOAD' }
+    | { type: 'UPDATE_PROGRESS'; payload: number }
+    | { type: 'UPLOAD_SUCCESS' }
+    | { type: 'UPLOAD_ERROR'; payload: string }
+    | { type: 'RESET_FORM' }
+    | { type: 'SET_AUTH_LOADING'; payload: boolean };
+
+// Initial state
+const initialState: State = {
+    title: '',
+    description: '',
+    videoFile: null,
+    thumbnailFile: null,
+    videoPreview: '',
+    thumbnailPreview: '',
+    loading: false,
+    error: '',
+    success: false,
+    uploadProgress: 0,
+    authLoading: true,
+};
+
+// Reducer function
+function reducer(state: State, action: Action): State {
+    switch (action.type) {
+        case 'SET_TITLE':
+            return { ...state, title: action.payload };
+        case 'SET_DESCRIPTION':
+            return { ...state, description: action.payload };
+        case 'SET_VIDEO_FILE':
+            return {
+                ...state,
+                videoFile: action.payload,
+                videoPreview: URL.createObjectURL(action.payload),
+                error: '',
+            };
+        case 'SET_THUMBNAIL_FILE':
+            return {
+                ...state,
+                thumbnailFile: action.payload,
+                thumbnailPreview: URL.createObjectURL(action.payload),
+                error: '',
+            };
+        case 'REMOVE_VIDEO':
+            return {
+                ...state,
+                videoFile: null,
+                videoPreview: '',
+            };
+        case 'REMOVE_THUMBNAIL':
+            return {
+                ...state,
+                thumbnailFile: null,
+                thumbnailPreview: '',
+            };
+        case 'START_UPLOAD':
+            return {
+                ...state,
+                loading: true,
+                error: '',
+                uploadProgress: 0,
+            };
+        case 'UPDATE_PROGRESS':
+            return {
+                ...state,
+                uploadProgress: action.payload,
+            };
+        case 'UPLOAD_SUCCESS':
+            return {
+                ...state,
+                loading: false,
+                success: true,
+                title: '',
+                description: '',
+                videoFile: null,
+                thumbnailFile: null,
+                videoPreview: '',
+                thumbnailPreview: '',
+            };
+        case 'UPLOAD_ERROR':
+            return {
+                ...state,
+                loading: false,
+                error: action.payload,
+            };
+        case 'RESET_FORM':
+            return {
+                ...initialState,
+                authLoading: false,
+            };
+        case 'SET_AUTH_LOADING':
+            return {
+                ...state,
+                authLoading: action.payload,
+            };
+        default:
+            return state;
+    }
+}
+
 export default function CreateVideo() {
     const router = useRouter();
     const { isAuthenticated, user } = useAuth();
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [videoFile, setVideoFile] = useState<File | null>(null);
-    const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-    const [videoPreview, setVideoPreview] = useState('');
-    const [thumbnailPreview, setThumbnailPreview] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState(false);
-    // Add state for tracking upload progress
-    const [uploadProgress, setUploadProgress] = useState(0);
+    const [state, dispatch] = useReducer(reducer, initialState);
 
     const videoInputRef = useRef<HTMLInputElement>(null);
     const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
-    // Loading state for initial authentication check
-    const [authLoading, setAuthLoading] = useState(true);
-
     // Check authentication status
-    React.useEffect(() => {
+    useEffect(() => {
         // Short timeout to ensure auth context is fully loaded
         const timer = setTimeout(() => {
-            setAuthLoading(false);
+            dispatch({ type: 'SET_AUTH_LOADING', payload: false });
         }, 500);
         return () => clearTimeout(timer);
     }, [isAuthenticated]);
@@ -41,11 +151,9 @@ export default function CreateVideo() {
         const file = e.target.files?.[0];
         if (file) {
             if (file.type.startsWith('video/')) {
-                setVideoFile(file);
-                setVideoPreview(URL.createObjectURL(file));
-                setError('');
+                dispatch({ type: 'SET_VIDEO_FILE', payload: file });
             } else {
-                setError('Please select a valid video file');
+                dispatch({ type: 'UPLOAD_ERROR', payload: 'Please select a valid video file' });
             }
         }
     };
@@ -54,11 +162,9 @@ export default function CreateVideo() {
         const file = e.target.files?.[0];
         if (file) {
             if (file.type.startsWith('image/')) {
-                setThumbnailFile(file);
-                setThumbnailPreview(URL.createObjectURL(file));
-                setError('');
+                dispatch({ type: 'SET_THUMBNAIL_FILE', payload: file });
             } else {
-                setError('Please select a valid image file for thumbnail');
+                dispatch({ type: 'UPLOAD_ERROR', payload: 'Please select a valid image file for thumbnail' });
             }
         }
     };
@@ -66,21 +172,22 @@ export default function CreateVideo() {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
-        if (!videoFile || !thumbnailFile || !title.trim()) {
-            setError('Please provide all required fields: video, thumbnail, and title');
+        if (!state.videoFile || !state.thumbnailFile || !state.title.trim()) {
+            dispatch({
+                type: 'UPLOAD_ERROR',
+                payload: 'Please provide all required fields: video, thumbnail, and title'
+            });
             return;
         }
 
-        setLoading(true);
-        setError('');
-        setUploadProgress(0);
+        dispatch({ type: 'START_UPLOAD' });
 
         try {
             const formData = new FormData();
-            formData.append('videoFile', videoFile);
-            formData.append('thumbnail', thumbnailFile);
-            formData.append('title', title);
-            formData.append('description', description);
+            formData.append('videoFile', state.videoFile);
+            formData.append('thumbnail', state.thumbnailFile);
+            formData.append('title', state.title);
+            formData.append('description', state.description);
 
             // Use XMLHttpRequest instead of fetch to track upload progress
             const xhr = new XMLHttpRequest();
@@ -89,7 +196,7 @@ export default function CreateVideo() {
             xhr.upload.addEventListener('progress', (event) => {
                 if (event.lengthComputable) {
                     const percentComplete = Math.round((event.loaded / event.total) * 100);
-                    setUploadProgress(percentComplete);
+                    dispatch({ type: 'UPDATE_PROGRESS', payload: percentComplete });
                 }
             });
 
@@ -98,69 +205,62 @@ export default function CreateVideo() {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     const response = JSON.parse(xhr.responseText);
                     if (response.success) {
-                        setSuccess(true);
-                        // Reset form after successful submission
-                        setTitle('');
-                        setDescription('');
-                        setVideoFile(null);
-                        setThumbnailFile(null);
-                        setVideoPreview('');
-                        setThumbnailPreview('');
+                        dispatch({ type: 'UPLOAD_SUCCESS' });
 
                         // Redirect to video page after short delay
                         setTimeout(() => {
                             router.push(`/videos/${response.data._id}`);
                         }, 2000);
                     } else {
-                        setError(response.message || 'Failed to upload video');
+                        dispatch({
+                            type: 'UPLOAD_ERROR',
+                            payload: response.message || 'Failed to upload video'
+                        });
                     }
                 } else {
-                    setError('Server error: ' + xhr.status);
+                    dispatch({ type: 'UPLOAD_ERROR', payload: 'Server error: ' + xhr.status });
                 }
-                setLoading(false);
             });
 
             // Handle errors
             xhr.addEventListener('error', () => {
-                setError('Network error occurred while uploading');
-                setLoading(false);
+                dispatch({ type: 'UPLOAD_ERROR', payload: 'Network error occurred while uploading' });
             });
 
             xhr.addEventListener('abort', () => {
-                setError('Upload aborted');
-                setLoading(false);
+                dispatch({ type: 'UPLOAD_ERROR', payload: 'Upload aborted' });
             });
 
             // Open and send the request
-            xhr.open('POST', 'https://vidverse-backend.vercel.app/api/v1/videos/create-video', true);
+            xhr.open('POST', `${process.env.NEXT_PUBLIC_API_URL}/api/v1/videos/create-video`, true);
             xhr.withCredentials = true;
             xhr.send(formData);
 
         } catch (err) {
-            setError('An error occurred while uploading. Please try again.');
+            dispatch({
+                type: 'UPLOAD_ERROR',
+                payload: 'An error occurred while uploading. Please try again.'
+            });
             console.error('Upload error:', err);
-            setLoading(false);
         }
     };
 
     const removeVideo = () => {
-        setVideoFile(null);
-        setVideoPreview('');
+        dispatch({ type: 'REMOVE_VIDEO' });
         if (videoInputRef.current) {
             videoInputRef.current.value = '';
         }
     };
 
     const removeThumbnail = () => {
-        setThumbnailFile(null);
-        setThumbnailPreview('');
+        dispatch({ type: 'REMOVE_THUMBNAIL' });
         if (thumbnailInputRef.current) {
             thumbnailInputRef.current.value = '';
         }
     };
 
     // Loading state
-    if (authLoading) return (
+    if (state.authLoading) return (
         <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
             <div className="flex flex-col items-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
@@ -170,7 +270,7 @@ export default function CreateVideo() {
     );
 
     // Error state
-    if (error && !videoFile && !thumbnailFile) return (
+    if (state.error && !state.videoFile && !state.thumbnailFile) return (
         <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
             <div className="text-center bg-white dark:bg-black p-8 rounded-lg shadow-lg max-w-md">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 mb-4">
@@ -179,7 +279,7 @@ export default function CreateVideo() {
                     </svg>
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Error</h2>
-                <p className="mt-2 text-gray-600 dark:text-gray-300">{error}</p>
+                <p className="mt-2 text-gray-600 dark:text-gray-300">{state.error}</p>
                 <button
                     onClick={() => window.location.reload()}
                     className="mt-6 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors duration-200"
@@ -212,17 +312,17 @@ export default function CreateVideo() {
     );
 
     // Loading state with progress bar
-    if (loading) return (
+    if (state.loading) return (
         <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
             <div className="flex flex-col items-center w-full max-w-md px-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600 mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-300 mb-4">Uploading video... {uploadProgress}%</p>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">Uploading video... {state.uploadProgress}%</p>
 
                 {/* Progress bar */}
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-4">
                     <div
                         className="bg-red-600 h-4 rounded-full transition-all duration-300 ease-out"
-                        style={{ width: `${uploadProgress}%` }}
+                        style={{ width: `${state.uploadProgress}%` }}
                     ></div>
                 </div>
 
@@ -249,17 +349,17 @@ export default function CreateVideo() {
                     </div>
 
                     <div className="bg-white dark:bg-neutral-800 shadow rounded-lg overflow-hidden">
-                        {success && (
+                        {state.success && (
                             <div className="bg-green-50 dark:bg-green-900/20 p-4 flex items-center">
                                 <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
                                 <p className="text-green-700 dark:text-green-300">Video uploaded successfully! Redirecting...</p>
                             </div>
                         )}
 
-                        {error && (
+                        {state.error && (
                             <div className="bg-red-50 dark:bg-red-900/20 p-4 flex items-center">
                                 <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-                                <p className="text-red-700 dark:text-red-300">{error}</p>
+                                <p className="text-red-700 dark:text-red-300">{state.error}</p>
                             </div>
                         )}
 
@@ -270,7 +370,7 @@ export default function CreateVideo() {
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
                                         Video <span className="text-red-500">*</span>
                                     </label>
-                                    {!videoPreview ? (
+                                    {!state.videoPreview ? (
                                         <div
                                             onClick={() => videoInputRef.current?.click()}
                                             className="border-2 border-dashed border-gray-300 dark:border-gray-400 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
@@ -288,7 +388,7 @@ export default function CreateVideo() {
                                     ) : (
                                         <div className="relative rounded-lg overflow-hidden bg-black">
                                             <video
-                                                src={videoPreview}
+                                                src={state.videoPreview}
                                                 className="w-full h-48 object-contain"
                                                 controls
                                             />
@@ -316,7 +416,7 @@ export default function CreateVideo() {
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
                                         Thumbnail <span className="text-red-500">*</span>
                                     </label>
-                                    {!thumbnailPreview ? (
+                                    {!state.thumbnailPreview ? (
                                         <div
                                             onClick={() => thumbnailInputRef.current?.click()}
                                             className="border-2 border-dashed border-gray-300 dark:border-gray-400 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
@@ -334,7 +434,7 @@ export default function CreateVideo() {
                                     ) : (
                                         <div className="relative rounded-lg overflow-hidden">
                                             <img
-                                                src={thumbnailPreview}
+                                                src={state.thumbnailPreview}
                                                 alt="Thumbnail preview"
                                                 className="w-full h-48 object-cover"
                                             />
@@ -366,8 +466,8 @@ export default function CreateVideo() {
                                 <input
                                     type="text"
                                     id="title"
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
+                                    value={state.title}
+                                    onChange={(e) => dispatch({ type: 'SET_TITLE', payload: e.target.value })}
                                     className="mt-1 block w-full rounded-md border-2 border-dashed border-gray-300 dark:border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-400 text-base py-3 px-4"
                                     placeholder="Enter video title"
                                     required
@@ -381,8 +481,8 @@ export default function CreateVideo() {
                                 </label>
                                 <textarea
                                     id="description"
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
+                                    value={state.description}
+                                    onChange={(e) => dispatch({ type: 'SET_DESCRIPTION', payload: e.target.value })}
                                     rows={4}
                                     className="mt-1 block w-full rounded-md border-2 border-dashed border-gray-300 dark:border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-neutral-800 dark:text-white dark:placeholder-gray-400 text-base py-3 px-4"
                                     placeholder="Describe your video"
@@ -393,11 +493,13 @@ export default function CreateVideo() {
                             <div className="flex justify-end">
                                 <button
                                     type="submit"
-                                    disabled={loading}
-                                    className={`inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white ${loading ? 'bg-indigo-400 dark:bg-indigo-600 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500'
+                                    disabled={state.loading}
+                                    className={`inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white ${state.loading
+                                            ? 'bg-indigo-400 dark:bg-indigo-600 cursor-not-allowed'
+                                            : 'bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500'
                                         } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors`}
                                 >
-                                    {loading ? 'Uploading...' : 'Upload Video'}
+                                    {state.loading ? 'Uploading...' : 'Upload Video'}
                                 </button>
                             </div>
                         </form>

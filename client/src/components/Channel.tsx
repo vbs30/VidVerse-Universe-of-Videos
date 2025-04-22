@@ -1,14 +1,15 @@
 'use client'
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useReducer } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ChevronDown, Users } from "lucide-react";
 import VideoGallery from "@/components/VideoGallery";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext"; // Import useAuth hook
+import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
+// Types remain the same as your original code
 interface ChannelData {
   _id: string;
   username: string;
@@ -67,33 +68,148 @@ interface ChannelPageProps {
   };
 }
 
+// Define state type for the reducer
+interface ChannelState {
+  loading: boolean;
+  error: string | null;
+  channelData: ChannelData | null;
+  videos: Video[];
+  totalVideos: number;
+  activeTab: string;
+  subscribing: boolean;
+  isSubscribed: boolean;
+}
+
+// Define action types for the reducer
+type ChannelAction =
+  | { type: 'FETCH_START' }
+  | { type: 'FETCH_SUCCESS'; channelData: ChannelData }
+  | { type: 'FETCH_ERROR'; error: string }
+  | { type: 'SET_VIDEOS'; videos: Video[]; totalVideos: number }
+  | { type: 'SET_ACTIVE_TAB'; tab: string }
+  | { type: 'SET_SUBSCRIPTION_STATUS'; isSubscribed: boolean }
+  | { type: 'TOGGLE_SUBSCRIPTION_START' }
+  | { type: 'TOGGLE_SUBSCRIPTION_SUCCESS'; isSubscribed: boolean }
+  | { type: 'TOGGLE_SUBSCRIPTION_ERROR' };
+
+// Define the initial state
+const initialState: ChannelState = {
+  loading: true,
+  error: null,
+  channelData: null,
+  videos: [],
+  totalVideos: 0,
+  activeTab: "videos",
+  subscribing: false,
+  isSubscribed: false
+};
+
+// Create the reducer function
+const channelReducer = (state: ChannelState, action: ChannelAction): ChannelState => {
+  switch (action.type) {
+    case 'FETCH_START':
+      return { ...state, loading: true, error: null };
+    
+    case 'FETCH_SUCCESS':
+      return { 
+        ...state, 
+        loading: false, 
+        error: null, 
+        channelData: action.channelData 
+      };
+    
+    case 'FETCH_ERROR':
+      return { 
+        ...state, 
+        loading: false, 
+        error: action.error 
+      };
+    
+    case 'SET_VIDEOS':
+      return {
+        ...state,
+        videos: action.videos,
+        totalVideos: action.totalVideos
+      };
+    
+    case 'SET_ACTIVE_TAB':
+      return {
+        ...state,
+        activeTab: action.tab
+      };
+    
+    case 'SET_SUBSCRIPTION_STATUS':
+      return {
+        ...state,
+        isSubscribed: action.isSubscribed
+      };
+    
+    case 'TOGGLE_SUBSCRIPTION_START':
+      return {
+        ...state,
+        subscribing: true
+      };
+    
+    case 'TOGGLE_SUBSCRIPTION_SUCCESS':
+      return {
+        ...state,
+        subscribing: false,
+        isSubscribed: action.isSubscribed,
+        channelData: state.channelData ? {
+          ...state.channelData,
+          subscribersCount: action.isSubscribed 
+            ? state.channelData.subscribersCount + 1 
+            : state.channelData.subscribersCount - 1
+        } : null
+      };
+    
+    case 'TOGGLE_SUBSCRIPTION_ERROR':
+      return {
+        ...state,
+        subscribing: false
+      };
+    
+    default:
+      return state;
+  }
+};
+
 const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
   const { username } = params;
-  const { user, isAuthenticated } = useAuth(); // Get auth state from context
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [channelData, setChannelData] = useState<ChannelData | null>(null);
-  const [videos, setVideos] = useState<Video[]>([]);
-  const [totalVideos, setTotalVideos] = useState(0);
-  const [activeTab, setActiveTab] = useState("videos");
-  const [subscribing, setSubscribing] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+  
+  // Replace multiple useState hooks with a single useReducer
+  const [state, dispatch] = useReducer(channelReducer, initialState);
+  
+  const {
+    loading,
+    error,
+    channelData,
+    videos,
+    totalVideos,
+    activeTab,
+    subscribing,
+    isSubscribed
+  } = state;
 
-  // Add this new function to check subscription status
+  // Check subscription status
   const checkSubscriptionStatus = async (channelId: string) => {
     if (!isAuthenticated || !user) {
-      setIsSubscribed(false);
+      dispatch({ type: 'SET_SUBSCRIPTION_STATUS', isSubscribed: false });
       return;
     }
 
     try {
-      const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/subscription/check/${channelId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/subscription/check/${channelId}`, {
         credentials: 'include',
       });
 
       if (response.ok) {
         const result = await response.json();
-        setIsSubscribed(result.data.isSubscribed);
+        dispatch({ 
+          type: 'SET_SUBSCRIPTION_STATUS', 
+          isSubscribed: result.data.isSubscribed 
+        });
       }
     } catch (err) {
       console.error("Error checking subscription status:", err);
@@ -103,10 +219,10 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);
+        dispatch({ type: 'FETCH_START' });
 
-        // Fetch channel info first
-        const channelResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/users/c/${encodeURIComponent(username)}`);
+        // Fetch channel info
+        const channelResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/c/${encodeURIComponent(username)}`);
         if (!channelResponse.ok) {
           const errorText = await channelResponse.text();
           console.error("Channel fetch error:", channelResponse.status, errorText);
@@ -119,48 +235,62 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
           throw new Error(channelResult.message || "Failed to load channel data");
         }
 
-        // Set channel data immediately so we at least have the channel info
-        setChannelData(channelResult.data);
+        // Update channel data state
+        dispatch({ 
+          type: 'FETCH_SUCCESS', 
+          channelData: channelResult.data 
+        });
 
         // Check subscription status after getting channel data
         if (channelResult.data._id) {
           await checkSubscriptionStatus(channelResult.data._id);
         }
 
-        // Fetch channel videos - handle separately
+        // Fetch channel videos
         try {
-          const videosResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/cv/${encodeURIComponent(username)}`);
+          const videosResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/videos/cv/${encodeURIComponent(username)}`);
 
           if (!videosResponse.ok) {
             console.error("Videos fetch error:", videosResponse.status);
-            // Don't throw here, just set empty videos
-            setVideos([]);
-            setTotalVideos(0);
+            // Set empty videos
+            dispatch({
+              type: 'SET_VIDEOS',
+              videos: [],
+              totalVideos: 0
+            });
           } else {
             const videosResult: VideosResponse = await videosResponse.json();
 
             if (videosResult.success) {
-              setVideos(videosResult.data.videos || []);
-              setTotalVideos(videosResult.data.totalVideos || 0);
+              dispatch({
+                type: 'SET_VIDEOS',
+                videos: videosResult.data.videos || [],
+                totalVideos: videosResult.data.totalVideos || 0
+              });
             } else {
               console.warn("Videos fetch returned success: false", videosResult.message);
-              // Set empty videos but don't fail the whole page
-              setVideos([]);
-              setTotalVideos(0);
+              dispatch({
+                type: 'SET_VIDEOS',
+                videos: [],
+                totalVideos: 0
+              });
             }
           }
         } catch (videoErr) {
           console.error("Error fetching videos:", videoErr);
-          // Set empty videos but don't fail the whole page
-          setVideos([]);
-          setTotalVideos(0);
+          dispatch({
+            type: 'SET_VIDEOS',
+            videos: [],
+            totalVideos: 0
+          });
         }
 
       } catch (err) {
         console.error("Full error:", err);
-        setError(err instanceof Error ? err.message : "An unknown error occurred");
-      } finally {
-        setLoading(false);
+        dispatch({
+          type: 'FETCH_ERROR',
+          error: err instanceof Error ? err.message : "An unknown error occurred"
+        });
       }
     };
 
@@ -173,16 +303,16 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
   const handleSubscriptionToggle = async () => {
     if (!channelData) return;
 
-    // Check if user is authenticated using AuthContext
+    // Check if user is authenticated
     if (!isAuthenticated || !user) {
       toast.error("Please log in to subscribe to channels");
       return;
     }
 
     try {
-      setSubscribing(true);
+      dispatch({ type: 'TOGGLE_SUBSCRIPTION_START' });
 
-      const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/subscription/c/${channelData._id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/subscription/c/${channelData._id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -195,35 +325,25 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
       if (result.success) {
         // Toggle subscription status
         const newSubscriptionStatus = !isSubscribed;
-        setIsSubscribed(newSubscriptionStatus);
-
-        // Update subscriber count
-        setChannelData(prev => {
-          if (!prev) return prev;
-
-          const subscribersCount = newSubscriptionStatus
-            ? prev.subscribersCount + 1
-            : prev.subscribersCount - 1;
-
-          toast.success(newSubscriptionStatus ? "Successfully subscribed" : "Successfully unsubscribed");
-
-          return {
-            ...prev,
-            subscribersCount: subscribersCount
-          };
+        
+        dispatch({ 
+          type: 'TOGGLE_SUBSCRIPTION_SUCCESS', 
+          isSubscribed: newSubscriptionStatus 
         });
+        
+        toast.success(newSubscriptionStatus ? "Successfully subscribed" : "Successfully unsubscribed");
       } else {
+        dispatch({ type: 'TOGGLE_SUBSCRIPTION_ERROR' });
         toast.error(result.message || "Failed to update subscription");
       }
     } catch (err) {
+      dispatch({ type: 'TOGGLE_SUBSCRIPTION_ERROR' });
       toast.error("Error updating subscription. Please try again.");
       console.error("Subscription error:", err);
-    } finally {
-      setSubscribing(false);
     }
   };
 
-  // Format date for videos and channel creation
+  // Utility functions remain the same
   const getTimeAgo = (dateString: string): string => {
     const now = new Date();
     const createdAt = new Date(dateString);
@@ -241,7 +361,6 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
     return `${Math.floor(diffInDays / 365)} years ago`;
   };
 
-  // Format the full date
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -251,13 +370,13 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
     });
   };
 
-  // Format view count
   const formatViews = (views: number): string => {
     if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
     if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
     return views.toString();
   };
 
+  // JSX remains mostly unchanged, just using state variables from the reducer
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
       <div className="flex flex-col items-center">
@@ -291,7 +410,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
 
   return (
     <div className="flex flex-col h-screen bg-white dark:bg-neutral-950">
-      {/* Category header - fixed at the top */}
+      {/* Header */}
       <header className="flex h-16 shrink-0 items-center border-b dark:border-white/10 bg-white dark:bg-neutral-950 px-4 z-10">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mx-2 h-4 dark:bg-white/10" />
@@ -300,7 +419,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
         </div>
       </header>
 
-      {/* Scrollable content area */}
+      {/* Content area */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
         {/* Channel Banner */}
         <div
@@ -365,7 +484,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
+                {/* Subscribe Button */}
                 <div className="flex items-center gap-2 mt-4 md:mt-0">
                   <button
                     onClick={handleSubscriptionToggle}
@@ -395,11 +514,11 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
             </div>
           </div>
 
-          {/* Navigation Tabs */}
+          {/* Tabs */}
           <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-neutral-950 z-10">
             <nav className="flex overflow-x-auto scrollbar-none" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
               <button
-                onClick={() => setActiveTab("videos")}
+                onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', tab: "videos" })}
                 className={`px-4 py-3 font-medium text-sm transition-colors duration-200 border-b-2 whitespace-nowrap ${activeTab === "videos"
                   ? "border-black dark:border-white text-black dark:text-white"
                   : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300"
@@ -408,7 +527,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
                 VIDEOS
               </button>
               <button
-                onClick={() => setActiveTab("playlists")}
+                onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', tab: "playlists" })}
                 className={`px-4 py-3 font-medium text-sm transition-colors duration-200 border-b-2 whitespace-nowrap ${activeTab === "playlists"
                   ? "border-black dark:border-white text-black dark:text-white"
                   : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300"
@@ -417,7 +536,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
                 PLAYLISTS
               </button>
               <button
-                onClick={() => setActiveTab("about")}
+                onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', tab: "about" })}
                 className={`px-4 py-3 font-medium text-sm transition-colors duration-200 border-b-2 whitespace-nowrap ${activeTab === "about"
                   ? "border-black dark:border-white text-black dark:text-white"
                   : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300"
@@ -428,7 +547,7 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
             </nav>
           </div>
 
-          {/* Content Section */}
+          {/* Tab Content */}
           <div className="py-6 pb-16">
             {activeTab === "videos" && (
               <>
@@ -550,6 +669,5 @@ const ChannelPage: React.FC<ChannelPageProps> = ({ params }) => {
       </div>
     </div>
   );
-};
-
+}
 export default ChannelPage;

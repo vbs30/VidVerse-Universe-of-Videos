@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useReducer, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { User, Loader2 } from 'lucide-react';
@@ -36,6 +36,64 @@ interface Video {
     __v: number;
 }
 
+// Define state type
+interface SearchState {
+    videos: Video[];
+    channels: Channel[];
+    isLoading: boolean;
+    error: string;
+    activeTab: number;
+}
+
+// Define action types
+type SearchAction =
+    | { type: 'FETCH_START' }
+    | { type: 'FETCH_SUCCESS'; payload: { videos: Video[], channels: Channel[] } }
+    | { type: 'FETCH_ERROR'; payload: string }
+    | { type: 'SET_ACTIVE_TAB'; payload: number };
+
+// Create initial state
+const initialState: SearchState = {
+    videos: [],
+    channels: [],
+    isLoading: true,
+    error: '',
+    activeTab: 0
+};
+
+// Create reducer function
+const searchReducer = (state: SearchState, action: SearchAction): SearchState => {
+    switch (action.type) {
+        case 'FETCH_START':
+            return {
+                ...state,
+                isLoading: true,
+                error: ''
+            };
+        case 'FETCH_SUCCESS':
+            return {
+                ...state,
+                videos: action.payload.videos,
+                channels: action.payload.channels,
+                isLoading: false,
+                error: ''
+            };
+        case 'FETCH_ERROR':
+            return {
+                ...state,
+                isLoading: false,
+                error: action.payload
+            };
+        case 'SET_ACTIVE_TAB':
+            return {
+                ...state,
+                activeTab: action.payload
+            };
+        default:
+            return state;
+    }
+};
+
 // Loading component for Suspense fallback
 function SearchPageLoading() {
     return (
@@ -50,24 +108,20 @@ function SearchPageLoading() {
 function SearchPageContent() {
     const searchParams = useSearchParams();
     const query = searchParams.get('q') || '';
-    const [activeTab, setActiveTab] = useState(0);
-    const [videos, setVideos] = useState([]);
-    const [channels, setChannels] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [state, dispatch] = useReducer(searchReducer, initialState);
+    const { videos, channels, isLoading, error, activeTab } = state;
 
     useEffect(() => {
         const fetchData = async () => {
-            setIsLoading(true);
-            setError('');
+            dispatch({ type: 'FETCH_START' });
 
             try {
                 // Fetch videos
-                const videosResponse = await fetch('https://vidverse-backend.vercel.app/api/v1/dashboard/all-videos');
+                const videosResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/dashboard/all-videos`);
                 const videosData = await videosResponse.json();
 
                 // Fetch channels
-                const channelsResponse = await fetch('https://vidverse-backend.vercel.app/api/v1/subscription/all-channels');
+                const channelsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/subscription/all-channels`);
                 const channelsData = await channelsResponse.json();
 
                 if (videosData.success && channelsData.success) {
@@ -84,16 +138,25 @@ function SearchPageContent() {
                         channel.fullName.toLowerCase().includes(query.toLowerCase())
                     );
 
-                    setVideos(filteredVideos);
-                    setChannels(filteredChannels);
+                    dispatch({
+                        type: 'FETCH_SUCCESS',
+                        payload: {
+                            videos: filteredVideos,
+                            channels: filteredChannels
+                        }
+                    });
                 } else {
-                    setError('Failed to fetch data');
+                    dispatch({
+                        type: 'FETCH_ERROR',
+                        payload: 'Failed to fetch data'
+                    });
                 }
             } catch (err) {
-                setError('Error fetching search results');
+                dispatch({
+                    type: 'FETCH_ERROR',
+                    payload: 'Error fetching search results'
+                });
                 console.error(err);
-            } finally {
-                setIsLoading(false);
             }
         };
 
@@ -101,6 +164,10 @@ function SearchPageContent() {
             fetchData();
         }
     }, [query]);
+
+    const handleTabSelect = (index: number) => {
+        dispatch({ type: 'SET_ACTIVE_TAB', payload: index });
+    };
 
     if (!query) {
         return (
@@ -130,7 +197,7 @@ function SearchPageContent() {
                 ) : (
                     <Tabs
                         selectedIndex={activeTab}
-                        onSelect={(index) => setActiveTab(index)}
+                        onSelect={handleTabSelect}
                         className="search-tabs"
                     >
                         <TabList className="flex mb-6 border-b">
@@ -164,7 +231,8 @@ function SearchPageContent() {
 
                                                 {channels.length > 4 && (
                                                     <div className="mt-4 text-center">
-                                                        <button onClick={() => setActiveTab(2)}
+                                                        <button
+                                                            onClick={() => handleTabSelect(2)}
                                                             className="px-4 py-2 text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
                                                         >
                                                             Show all {channels.length} channels
@@ -185,7 +253,8 @@ function SearchPageContent() {
 
                                                 {videos.length > 6 && (
                                                     <div className="mt-4 text-center">
-                                                        <button onClick={() => setActiveTab(1)}
+                                                        <button
+                                                            onClick={() => handleTabSelect(1)}
                                                             className="px-4 py-2 text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
                                                         >
                                                             Show all {videos.length} videos

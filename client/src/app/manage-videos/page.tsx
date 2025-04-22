@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
@@ -31,39 +31,120 @@ interface Video {
     createdAt: string;
 }
 
-const ManageVideos = () => {
-    const { user, isAuthenticated } = useAuth();
-    const [videos, setVideos] = useState<Video[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [editMode, setEditMode] = useState<string | null>(null);
-    const [editData, setEditData] = useState({
+// Define the state type
+interface State {
+    videos: Video[];
+    loading: boolean;
+    editMode: string | null;
+    editData: {
+        title: string;
+        description: string;
+        videoFile: File | null;
+        thumbnail: File | null;
+    };
+    uploadProgress: number;
+    isUploading: boolean;
+    showDeleteDialog: boolean;
+    videoToDelete: string | null;
+}
+
+// Define action types
+type Action =
+    | { type: 'SET_VIDEOS'; payload: Video[] }
+    | { type: 'SET_LOADING'; payload: boolean }
+    | { type: 'SET_EDIT_MODE'; payload: string | null }
+    | { type: 'SET_EDIT_DATA'; payload: Partial<State['editData']> }
+    | { type: 'RESET_EDIT_DATA' }
+    | { type: 'SET_UPLOAD_PROGRESS'; payload: number }
+    | { type: 'SET_IS_UPLOADING'; payload: boolean }
+    | { type: 'SET_DELETE_DIALOG'; payload: boolean }
+    | { type: 'SET_VIDEO_TO_DELETE'; payload: string | null }
+    | { type: 'DELETE_VIDEO'; payload: string }
+    | { type: 'UPDATE_VIDEO'; payload: Video };
+
+// Initial state
+const initialState: State = {
+    videos: [],
+    loading: true,
+    editMode: null,
+    editData: {
         title: '',
         description: '',
-        videoFile: null as File | null,
-        thumbnail: null as File | null,
-    });
-    const [uploadProgress, setUploadProgress] = useState<number>(0);
-    const [isUploading, setIsUploading] = useState<boolean>(false);
-    const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
-    const [videoToDelete, setVideoToDelete] = useState<string | null>(null);
+        videoFile: null,
+        thumbnail: null,
+    },
+    uploadProgress: 0,
+    isUploading: false,
+    showDeleteDialog: false,
+    videoToDelete: null,
+};
+
+// Reducer function
+function reducer(state: State, action: Action): State {
+    switch (action.type) {
+        case 'SET_VIDEOS':
+            return { ...state, videos: action.payload };
+        case 'SET_LOADING':
+            return { ...state, loading: action.payload };
+        case 'SET_EDIT_MODE':
+            return { ...state, editMode: action.payload };
+        case 'SET_EDIT_DATA':
+            return {
+                ...state,
+                editData: { ...state.editData, ...action.payload },
+            };
+        case 'RESET_EDIT_DATA':
+            return {
+                ...state,
+                editData: initialState.editData,
+                uploadProgress: 0,
+            };
+        case 'SET_UPLOAD_PROGRESS':
+            return { ...state, uploadProgress: action.payload };
+        case 'SET_IS_UPLOADING':
+            return { ...state, isUploading: action.payload };
+        case 'SET_DELETE_DIALOG':
+            return { ...state, showDeleteDialog: action.payload };
+        case 'SET_VIDEO_TO_DELETE':
+            return { ...state, videoToDelete: action.payload };
+        case 'DELETE_VIDEO':
+            return {
+                ...state,
+                videos: state.videos.filter(video => video._id !== action.payload),
+            };
+        case 'UPDATE_VIDEO':
+            return {
+                ...state,
+                videos: state.videos.map(video =>
+                    video._id === action.payload._id ? action.payload : video
+                ),
+            };
+        default:
+            return state;
+    }
+}
+
+const ManageVideos = () => {
+    const { user, isAuthenticated } = useAuth();
+    const [state, dispatch] = useReducer(reducer, initialState);
 
     // Fetch user videos on component mount
     useEffect(() => {
         const fetchUserVideos = async () => {
             if (!isAuthenticated || !user) {
-                setLoading(false);
+                dispatch({ type: 'SET_LOADING', payload: false });
                 return;
             }
 
             try {
-                const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/cv/${user.username}`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/videos/cv/${user.username}`, {
                     credentials: 'include',
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    setVideos(data.data.videos || []);
+                    dispatch({ type: 'SET_VIDEOS', payload: data.data.videos || [] });
                 } else {
                     toast.error('Failed to fetch videos');
                 }
@@ -71,7 +152,7 @@ const ManageVideos = () => {
                 console.error('Error fetching videos:', error);
                 toast.error('Error connecting to server');
             } finally {
-                setLoading(false);
+                dispatch({ type: 'SET_LOADING', payload: false });
             }
         };
 
@@ -81,14 +162,14 @@ const ManageVideos = () => {
     // Handle input changes for edit form
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setEditData(prev => ({ ...prev, [name]: value }));
+        dispatch({ type: 'SET_EDIT_DATA', payload: { [name]: value } });
     };
 
     // Handle file input changes
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const { name } = e.target;
-            setEditData(prev => ({ ...prev, [name]: e.target.files?.[0] || null }));
+            dispatch({ type: 'SET_EDIT_DATA', payload: { [name]: e.target.files[0] } });
         }
     };
 
@@ -97,28 +178,23 @@ const ManageVideos = () => {
         e.preventDefault(); // Prevent link navigation
         e.stopPropagation(); // Stop event propagation
 
-        setEditMode(video._id);
-        setEditData({
-            title: video.title,
-            description: video.description,
-            videoFile: null,
-            thumbnail: null,
+        dispatch({ type: 'SET_EDIT_MODE', payload: video._id });
+        dispatch({
+            type: 'SET_EDIT_DATA',
+            payload: {
+                title: video.title,
+                description: video.description,
+                videoFile: null,
+                thumbnail: null,
+            },
         });
-
-        // Clear any previous progress
-        setUploadProgress(0);
+        dispatch({ type: 'SET_UPLOAD_PROGRESS', payload: 0 });
     };
 
     // Cancel edit mode
     const cancelEdit = () => {
-        setEditMode(null);
-        setEditData({
-            title: '',
-            description: '',
-            videoFile: null,
-            thumbnail: null,
-        });
-        setUploadProgress(0);
+        dispatch({ type: 'SET_EDIT_MODE', payload: null });
+        dispatch({ type: 'RESET_EDIT_DATA' });
     };
 
     // Handle video update with XMLHttpRequest for progress tracking
@@ -127,11 +203,13 @@ const ManageVideos = () => {
 
         const formData = new FormData();
 
+        const { title, description, videoFile, thumbnail } = state.editData;
+
         // Only append fields that have values
-        if (editData.title) formData.append('title', editData.title);
-        if (editData.description) formData.append('description', editData.description);
-        if (editData.videoFile) formData.append('videoFile', editData.videoFile);
-        if (editData.thumbnail) formData.append('thumbnail', editData.thumbnail);
+        if (title) formData.append('title', title);
+        if (description) formData.append('description', description);
+        if (videoFile) formData.append('videoFile', videoFile);
+        if (thumbnail) formData.append('thumbnail', thumbnail);
 
         const xhr = new XMLHttpRequest();
 
@@ -139,7 +217,7 @@ const ManageVideos = () => {
         xhr.upload.addEventListener('progress', (event) => {
             if (event.lengthComputable) {
                 const percentComplete = Math.round((event.loaded / event.total) * 100);
-                setUploadProgress(percentComplete);
+                dispatch({ type: 'SET_UPLOAD_PROGRESS', payload: percentComplete });
             }
         });
 
@@ -149,11 +227,9 @@ const ManageVideos = () => {
                     const response = JSON.parse(xhr.responseText);
                     if (response.success) {
                         // Update the video in the local state
-                        setVideos(videos.map(video =>
-                            video._id === videoId ? response.data : video
-                        ));
+                        dispatch({ type: 'UPDATE_VIDEO', payload: response.data });
                         toast.success('Video updated successfully');
-                        setEditMode(null);
+                        dispatch({ type: 'SET_EDIT_MODE', payload: null });
                     } else {
                         toast.error(response.message || 'Failed to update video');
                     }
@@ -163,22 +239,22 @@ const ManageVideos = () => {
             } else {
                 toast.error(`Server error: ${xhr.status}`);
             }
-            setIsUploading(false);
+            dispatch({ type: 'SET_IS_UPLOADING', payload: false });
         });
 
         xhr.addEventListener('error', () => {
             toast.error('Network error occurred');
-            setIsUploading(false);
+            dispatch({ type: 'SET_IS_UPLOADING', payload: false });
         });
 
         xhr.addEventListener('abort', () => {
             toast.error('Upload aborted');
-            setIsUploading(false);
+            dispatch({ type: 'SET_IS_UPLOADING', payload: false });
         });
 
-        xhr.open('PATCH', `https://vidverse-backend.vercel.app/api/v1/videos/v/${videoId}`);
+        xhr.open('PATCH', `${process.env.NEXT_PUBLIC_API_URL}/api/v1/videos/v/${videoId}`);
         xhr.withCredentials = true;
-        setIsUploading(true);
+        dispatch({ type: 'SET_IS_UPLOADING', payload: true });
         xhr.send(formData);
     };
 
@@ -187,8 +263,8 @@ const ManageVideos = () => {
         e.preventDefault(); // Prevent link navigation
         e.stopPropagation(); // Stop event propagation
 
-        setVideoToDelete(videoId);
-        setShowDeleteDialog(true);
+        dispatch({ type: 'SET_VIDEO_TO_DELETE', payload: videoId });
+        dispatch({ type: 'SET_DELETE_DIALOG', payload: true });
     };
 
     // Format view count
@@ -200,10 +276,10 @@ const ManageVideos = () => {
 
     // Handle video deletion
     const handleDeleteVideo = async () => {
-        if (!isAuthenticated || !videoToDelete) return;
+        if (!isAuthenticated || !state.videoToDelete) return;
 
         try {
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/v/${videoToDelete}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/videos/v/${state.videoToDelete}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });
@@ -212,7 +288,7 @@ const ManageVideos = () => {
 
             if (data.success) {
                 // Remove the video from local state
-                setVideos(videos.filter(video => video._id !== videoToDelete));
+                dispatch({ type: 'DELETE_VIDEO', payload: state.videoToDelete });
                 toast.success('Video deleted successfully');
             } else {
                 toast.error(data.message || 'Failed to delete video');
@@ -221,8 +297,8 @@ const ManageVideos = () => {
             console.error('Error deleting video:', error);
             toast.error('Error connecting to server');
         } finally {
-            setShowDeleteDialog(false);
-            setVideoToDelete(null);
+            dispatch({ type: 'SET_DELETE_DIALOG', payload: false });
+            dispatch({ type: 'SET_VIDEO_TO_DELETE', payload: null });
         }
     };
 
@@ -244,7 +320,7 @@ const ManageVideos = () => {
         );
     }
 
-    if (loading) {
+    if (state.loading) {
         return renderCenteredMessage(
             "Loading Your Videos",
             "Please wait while we fetch your videos..."
@@ -265,7 +341,7 @@ const ManageVideos = () => {
             {/* Scrollable content area */}
             <div className="flex-1 overflow-y-auto scrollbar-hide p-4">
                 <div className="container mx-auto">
-                    {videos.length === 0 ? (
+                    {state.videos.length === 0 ? (
                         <div className="text-center py-8 sm:py-12 bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-8">
                             <p className="text-gray-600 dark:text-gray-300 mb-4">You haven&apos;t uploaded any videos yet.</p>
                             <button
@@ -277,7 +353,7 @@ const ManageVideos = () => {
                         </div>
                     ) : (
                         <div className="space-y-4 sm:space-y-6">
-                            {videos.map(video => (
+                            {state.videos.map(video => (
                                 <div key={video._id} className="border rounded-lg overflow-hidden px-4 py-4 bg-white dark:bg-neutral-800 shadow dark:border-gray-700">
                                     <div className="flex flex-col sm:flex-row">
                                         <Link href={`/videos/${video._id}`} className="relative w-full sm:w-1/3 h-48">
@@ -332,7 +408,7 @@ const ManageVideos = () => {
             </div>
 
             {/* High-quality Edit Modal with excellent responsive design */}
-            <AlertDialog open={editMode !== null} onOpenChange={(open) => !open && cancelEdit()}>
+            <AlertDialog open={state.editMode !== null} onOpenChange={(open) => !open && cancelEdit()}>
                 <AlertDialogContent className="max-w-md sm:max-w-lg md:max-w-xl p-0 rounded-xl overflow-hidden border-0 shadow-lg dark:bg-neutral-800">
                     {/* Header with visual styling */}
                     <div className="bg-gradient-to-r text-neutral-800 dark:text-white p-5">
@@ -354,7 +430,7 @@ const ManageVideos = () => {
                                 id="edit-title"
                                 name="title"
                                 type="text"
-                                value={editData.title}
+                                value={state.editData.title}
                                 onChange={handleInputChange}
                                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 
                     bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 
@@ -374,7 +450,7 @@ const ManageVideos = () => {
                                 id="edit-description"
                                 name="description"
                                 rows={4}
-                                value={editData.description}
+                                value={state.editData.description}
                                 onChange={handleInputChange}
                                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 
                     bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 
@@ -477,7 +553,7 @@ const ManageVideos = () => {
                             </div>
                         </div>
 
-                        {isUploading && (
+                        {state.isUploading && (
                             <div className="space-y-2 bg-blue-50 dark:bg-neutral-900/20 p-3 rounded-lg">
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center">
@@ -487,9 +563,9 @@ const ManageVideos = () => {
                                         </svg>
                                         <span className="font-medium text-blue-700 dark:text-blue-300">Uploading...</span>
                                     </div>
-                                    <span className="text-sm font-bold text-blue-700 dark:text-blue-300">{uploadProgress}%</span>
+                                    <span className="text-sm font-bold text-blue-700 dark:text-blue-300">{state.uploadProgress}%</span>
                                 </div>
-                                <Progress value={uploadProgress} className="h-2 w-full bg-blue-200 dark:bg-blue-800" />
+                                <Progress value={state.uploadProgress} className="h-2 w-full bg-blue-200 dark:bg-blue-800" />
                             </div>
                         )}
                     </div>
@@ -499,23 +575,25 @@ const ManageVideos = () => {
                         <AlertDialogCancel
                             onClick={cancelEdit}
                             className="w-full sm:w-auto px-5 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                            disabled={isUploading}
+                            disabled={state.isUploading}
                         >
                             Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction
-                            onClick={() => editMode && handleUpdateVideo(editMode)}
+                            onClick={() => state.editMode && handleUpdateVideo(state.editMode)}
                             className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 dark:bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 transition-colors"
-                            disabled={isUploading}
+                            disabled={state.isUploading}
                         >
-                            {isUploading ? 'Uploading...' : 'Save Changes'}
+                            {state.isUploading ? 'Uploading...' : 'Save Changes'}
                         </AlertDialogAction>
                     </div>
                 </AlertDialogContent>
             </AlertDialog>
 
             {/* Delete Confirmation Dialog */}
-            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <AlertDialog open={state.showDeleteDialog} onOpenChange={(open) =>
+                dispatch({ type: 'SET_DELETE_DIALOG', payload: open })
+            }>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>

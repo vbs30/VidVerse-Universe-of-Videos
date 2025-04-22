@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useReducer } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -76,12 +76,54 @@ interface VideoStats {
   videos: Video[];
 }
 
+// Define the state shape
+interface ProfileState {
+  channelData: UserChannel | null;
+  videoStats: VideoStats | null;
+  activeTab: string;
+  isLoading: boolean;
+  error: string | null;
+}
+
+// Define action types
+type ProfileAction =
+  | { type: 'SET_CHANNEL_DATA', payload: UserChannel }
+  | { type: 'SET_VIDEO_STATS', payload: VideoStats }
+  | { type: 'SET_ACTIVE_TAB', payload: string }
+  | { type: 'SET_LOADING', payload: boolean }
+  | { type: 'SET_ERROR', payload: string | null };
+
+// Initial state
+const initialState: ProfileState = {
+  channelData: null,
+  videoStats: null,
+  activeTab: "overview",
+  isLoading: false,
+  error: null
+};
+
+// Reducer function
+function profileReducer(state: ProfileState, action: ProfileAction): ProfileState {
+  switch (action.type) {
+    case 'SET_CHANNEL_DATA':
+      return { ...state, channelData: action.payload };
+    case 'SET_VIDEO_STATS':
+      return { ...state, videoStats: action.payload };
+    case 'SET_ACTIVE_TAB':
+      return { ...state, activeTab: action.payload };
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
+    default:
+      return state;
+  }
+}
+
 const ProfilePage = () => {
-  const { user, isAuthenticated, isLoading } = useAuth();
-  const [channelData, setChannelData] = useState<UserChannel | null>(null);
-  const [videoStats, setVideoStats] = useState<VideoStats | null>(null);
-  // Add this state to manage the active tab
-  const [activeTab, setActiveTab] = useState("overview");
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [state, dispatch] = useReducer(profileReducer, initialState);
+  const { channelData, videoStats, activeTab, isLoading, error } = state;
 
   // Content distribution data calculated from actual video data
   const getContentCategories = (videos: Video[]) => {
@@ -112,19 +154,20 @@ const ProfilePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (isAuthenticated && user?.username) {
+        dispatch({ type: 'SET_LOADING', payload: true });
         try {
           // Fetch channel data
-          const channelResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/users/c/${user.username}`, {
+          const channelResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/c/${user.username}`, {
             credentials: 'include',
           });
           const channelResult = await channelResponse.json();
 
           if (channelResult.success) {
-            setChannelData(channelResult.data);
+            dispatch({ type: 'SET_CHANNEL_DATA', payload: channelResult.data });
           }
 
           // Fetch video stats
-          const videosResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/cv/${user.username}`, {
+          const videosResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/videos/cv/${user.username}`, {
             credentials: 'include',
           });
           const videosResult = await videosResponse.json();
@@ -135,14 +178,21 @@ const ProfilePage = () => {
               (sum: number, video: Video) => sum + video.views, 0
             );
 
-            setVideoStats({
-              totalVideos: videosResult.data.totalVideos,
-              totalViews: totalViews,
-              videos: videosResult.data.videos
+            dispatch({
+              type: 'SET_VIDEO_STATS',
+              payload: {
+                totalVideos: videosResult.data.totalVideos,
+                totalViews: totalViews,
+                videos: videosResult.data.videos
+              }
             });
           }
+          dispatch({ type: 'SET_ERROR', payload: null });
         } catch (error) {
           console.error('Error fetching profile data:', error);
+          dispatch({ type: 'SET_ERROR', payload: 'Failed to fetch profile data' });
+        } finally {
+          dispatch({ type: 'SET_LOADING', payload: false });
         }
       }
     };
@@ -150,7 +200,7 @@ const ProfilePage = () => {
     fetchData();
   }, [isAuthenticated, user]);
 
-  if (isLoading || !isAuthenticated) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-neutral-950">
         <div className="text-center">
@@ -172,6 +222,23 @@ const ProfilePage = () => {
               Log In
             </button>
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-neutral-950">
+        <div className="text-center max-w-md p-6 bg-white dark:bg-neutral-800 rounded-lg shadow-lg">
+          <h1 className="text-2xl font-bold mb-4 dark:text-white">Error</h1>
+          <p className="mb-6 dark:text-gray-300">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -260,7 +327,11 @@ const ProfilePage = () => {
       {/* Tabs Navigation - also fixed */}
       <div className="shrink-0 bg-white dark:bg-neutral-950 px-4 sm:px-6 lg:px-8 py-6">
         <div className="max-w-7xl mx-auto">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => dispatch({ type: 'SET_ACTIVE_TAB', payload: value })}
+            className="w-full"
+          >
             <TabsList className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 p-1 rounded-lg">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="engagement">Engagement</TabsTrigger>

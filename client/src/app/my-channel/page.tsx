@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useReducer } from "react";
 import { useAuth } from '@/contexts/AuthContext';
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -21,13 +21,6 @@ interface ChannelData {
   channelSubscriptionCount: number;
 }
 
-interface ChannelResponse {
-  statusCode: number;
-  data: ChannelData;
-  message: string;
-  success: boolean;
-}
-
 interface Video {
   _id: string;
   videoFile: string;
@@ -43,24 +36,60 @@ interface Video {
   __v: number;
 }
 
-interface VideosResponse {
-  statusCode: number;
-  data: {
-    videos: Video[];
-    totalVideos: number;
-  };
-  message: string;
-  success: boolean;
+// Define our state type
+interface ChannelState {
+  loading: boolean;
+  error: string | null;
+  channelData: ChannelData | null;
+  videos: Video[];
+  totalVideos: number;
+  activeTab: "videos" | "playlists" | "about";
+}
+
+// Define the initial state
+const initialState: ChannelState = {
+  loading: true,
+  error: null,
+  channelData: null,
+  videos: [],
+  totalVideos: 0,
+  activeTab: "videos"
+};
+
+// Define our action types
+type ChannelAction =
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'SET_CHANNEL_DATA'; payload: ChannelData }
+  | { type: 'SET_VIDEOS'; payload: { videos: Video[], totalVideos: number } }
+  | { type: 'SET_ACTIVE_TAB'; payload: "videos" | "playlists" | "about" };
+
+// Create our reducer function
+function channelReducer(state: ChannelState, action: ChannelAction): ChannelState {
+  switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
+    case 'SET_CHANNEL_DATA':
+      return { ...state, channelData: action.payload };
+    case 'SET_VIDEOS':
+      return {
+        ...state,
+        videos: action.payload.videos,
+        totalVideos: action.payload.totalVideos
+      };
+    case 'SET_ACTIVE_TAB':
+      return { ...state, activeTab: action.payload };
+    default:
+      return state;
+  }
 }
 
 const MyChannelPage: React.FC = () => {
   const { user, isAuthenticated, checkAuth } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [channelData, setChannelData] = useState<ChannelData | null>(null);
-  const [videos, setVideos] = useState<Video[]>([]);
-  const [totalVideos, setTotalVideos] = useState(0);
-  const [activeTab, setActiveTab] = useState("videos");
+  const [state, dispatch] = useReducer(channelReducer, initialState);
+  const { loading, error, channelData, videos, totalVideos, activeTab } = state;
 
   // First check authentication status when component mounts
   useEffect(() => {
@@ -75,43 +104,51 @@ const MyChannelPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!isAuthenticated || !user) {
-        setLoading(false);
+        dispatch({ type: 'SET_LOADING', payload: false });
         return;
       }
 
       try {
-        setLoading(true);
+        dispatch({ type: 'SET_LOADING', payload: true });
 
-        const videosResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/cv/${encodeURIComponent(user.username)}`, {
+        const videosResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/videos/cv/${encodeURIComponent(user.username)}`, {
           credentials: 'include',
         });
 
         if (!videosResponse.ok) throw new Error("Failed to fetch videos");
 
-        const videosResult: VideosResponse = await videosResponse.json();
+        const videosResult = await videosResponse.json();
 
         if (videosResult.success) {
-          setVideos(videosResult.data.videos);
-          setTotalVideos(videosResult.data.totalVideos);
+          dispatch({
+            type: 'SET_VIDEOS',
+            payload: {
+              videos: videosResult.data.videos,
+              totalVideos: videosResult.data.totalVideos
+            }
+          });
         } else {
           throw new Error(videosResult.message);
         }
 
-        const channelResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/users/c/${encodeURIComponent(user.username)}`, {
-          credentials: 'include', // Add credentials here too
+        const channelResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/c/${encodeURIComponent(user.username)}`, {
+          credentials: 'include',
         });
 
         if (!channelResponse.ok) throw new Error("Failed to fetch channel data");
 
-        const channelResult: ChannelResponse = await channelResponse.json();
+        const channelResult = await channelResponse.json();
 
         if (!channelResult.success) throw new Error(channelResult.message || "Failed to load channel data");
 
-        setChannelData(channelResult.data);
+        dispatch({ type: 'SET_CHANNEL_DATA', payload: channelResult.data });
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An unknown error occurred");
+        dispatch({
+          type: 'SET_ERROR',
+          payload: err instanceof Error ? err.message : "An unknown error occurred"
+        });
       } finally {
-        setLoading(false);
+        dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
 
@@ -298,7 +335,7 @@ const MyChannelPage: React.FC = () => {
           <div className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-neutral-950 z-10">
             <nav className="flex overflow-x-auto scrollbar-none" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
               <button
-                onClick={() => setActiveTab("videos")}
+                onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: "videos" })}
                 className={`px-4 py-3 font-medium text-sm transition-colors duration-200 border-b-2 whitespace-nowrap ${activeTab === "videos"
                   ? "border-black dark:border-white text-black dark:text-white"
                   : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300"
@@ -307,7 +344,7 @@ const MyChannelPage: React.FC = () => {
                 VIDEOS
               </button>
               <button
-                onClick={() => setActiveTab("playlists")}
+                onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: "playlists" })}
                 className={`px-4 py-3 font-medium text-sm transition-colors duration-200 border-b-2 whitespace-nowrap ${activeTab === "playlists"
                   ? "border-black dark:border-white text-black dark:text-white"
                   : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300"
@@ -316,7 +353,7 @@ const MyChannelPage: React.FC = () => {
                 PLAYLISTS
               </button>
               <button
-                onClick={() => setActiveTab("about")}
+                onClick={() => dispatch({ type: 'SET_ACTIVE_TAB', payload: "about" })}
                 className={`px-4 py-3 font-medium text-sm transition-colors duration-200 border-b-2 whitespace-nowrap ${activeTab === "about"
                   ? "border-black dark:border-white text-black dark:text-white"
                   : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300"
@@ -331,7 +368,7 @@ const MyChannelPage: React.FC = () => {
           <div className="py-6 pb-16">
             {activeTab === "videos" && (
               <>
-                {videos.length > 0 ? (
+                {videos && videos.length > 0 ? (
                   <>
                     <div className="mb-6">
                       <h2 className="text-lg font-bold text-gray-900 dark:text-white">Videos</h2>

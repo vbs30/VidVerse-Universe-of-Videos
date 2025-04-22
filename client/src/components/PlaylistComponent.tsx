@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from "react";
+import React, { useReducer, useEffect } from "react";
 import { useAuth } from '@/contexts/AuthContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
@@ -43,19 +43,155 @@ interface PlaylistResponse {
     success: boolean;
 }
 
-const PlaylistSection: React.FC = () => {
-    const { user } = useAuth();
-    const [playlists, setPlaylists] = useState<Playlist[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
-    const [showCreateForm, setShowCreateForm] = useState(false);
-    const [showEditForm, setShowEditForm] = useState(false);
-    const [formData, setFormData] = useState({
+// Define State interface
+interface State {
+    playlists: Playlist[];
+    loading: boolean;
+    error: string | null;
+    selectedPlaylist: Playlist | null;
+    showCreateForm: boolean;
+    showEditForm: boolean;
+    formData: {
+        name: string;
+        description: string;
+    };
+    isSubmitting: boolean;
+}
+
+// Define Action types
+type Action =
+    | { type: 'FETCH_PLAYLISTS_REQUEST' }
+    | { type: 'FETCH_PLAYLISTS_SUCCESS'; payload: Playlist[] }
+    | { type: 'FETCH_PLAYLISTS_FAILURE'; payload: string }
+    | { type: 'SET_SELECTED_PLAYLIST'; payload: Playlist | null }
+    | { type: 'TOGGLE_CREATE_FORM'; payload: boolean }
+    | { type: 'TOGGLE_EDIT_FORM'; payload: boolean }
+    | { type: 'UPDATE_FORM_DATA'; payload: { name: string; description: string } }
+    | { type: 'SET_IS_SUBMITTING'; payload: boolean }
+    | { type: 'REMOVE_VIDEO_FROM_PLAYLIST'; payload: { playlistId: string; videoId: string } }
+    | { type: 'RESET_FORM_DATA' };
+
+// Define initial state
+const initialState: State = {
+    playlists: [],
+    loading: true,
+    error: null,
+    selectedPlaylist: null,
+    showCreateForm: false,
+    showEditForm: false,
+    formData: {
         name: '',
         description: ''
-    });
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    },
+    isSubmitting: false
+};
+
+// Define reducer function
+const reducer = (state: State, action: Action): State => {
+    switch (action.type) {
+        case 'FETCH_PLAYLISTS_REQUEST':
+            return {
+                ...state,
+                loading: true,
+                error: null
+            };
+        case 'FETCH_PLAYLISTS_SUCCESS':
+            return {
+                ...state,
+                loading: false,
+                playlists: action.payload,
+                error: null
+            };
+        case 'FETCH_PLAYLISTS_FAILURE':
+            return {
+                ...state,
+                loading: false,
+                error: action.payload
+            };
+        case 'SET_SELECTED_PLAYLIST':
+            return {
+                ...state,
+                selectedPlaylist: action.payload,
+                loading: false
+            };
+        case 'TOGGLE_CREATE_FORM':
+            return {
+                ...state,
+                showCreateForm: action.payload,
+                // Reset form data when toggling the form
+                formData: action.payload ? state.formData : { name: '', description: '' }
+            };
+        case 'TOGGLE_EDIT_FORM':
+            return {
+                ...state,
+                showEditForm: action.payload,
+                // Keep form data when toggling the edit form
+            };
+        case 'UPDATE_FORM_DATA':
+            return {
+                ...state,
+                formData: action.payload
+            };
+        case 'RESET_FORM_DATA':
+            return {
+                ...state,
+                formData: { name: '', description: '' }
+            };
+        case 'SET_IS_SUBMITTING':
+            return {
+                ...state,
+                isSubmitting: action.payload
+            };
+        case 'REMOVE_VIDEO_FROM_PLAYLIST':
+            const { playlistId, videoId } = action.payload;
+
+            // Update selected playlist if it's the one being modified
+            let updatedSelectedPlaylist = state.selectedPlaylist;
+            if (state.selectedPlaylist && state.selectedPlaylist._id === playlistId) {
+                updatedSelectedPlaylist = {
+                    ...state.selectedPlaylist,
+                    video_details: state.selectedPlaylist.video_details.filter(video => video._id !== videoId),
+                    videoCount: state.selectedPlaylist.videoCount - 1
+                };
+            }
+
+            // Update the playlists array
+            const updatedPlaylists = state.playlists.map(playlist =>
+                playlist._id === playlistId
+                    ? {
+                        ...playlist,
+                        videoCount: playlist.videoCount - 1,
+                        video_details: playlist.video_details ?
+                            playlist.video_details.filter(video => video._id !== videoId) :
+                            []
+                    }
+                    : playlist
+            );
+
+            return {
+                ...state,
+                selectedPlaylist: updatedSelectedPlaylist,
+                playlists: updatedPlaylists
+            };
+        default:
+            return state;
+    }
+};
+
+const PlaylistSection: React.FC = () => {
+    const { user } = useAuth();
+    const [state, dispatch] = useReducer(reducer, initialState);
+
+    const {
+        playlists,
+        loading,
+        error,
+        selectedPlaylist,
+        showCreateForm,
+        showEditForm,
+        formData,
+        isSubmitting
+    } = state;
 
     // Format view count
     const formatViews = (views: number): string => {
@@ -85,8 +221,8 @@ const PlaylistSection: React.FC = () => {
     // Fetch user playlists
     const fetchPlaylists = async () => {
         try {
-            setLoading(true);
-            const response = await fetch('https://vidverse-backend.vercel.app/api/v1/playlist/get-user-playlist', {
+            dispatch({ type: 'FETCH_PLAYLISTS_REQUEST' });
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/playlist/get-user-playlist`, {
                 credentials: 'include',
             });
 
@@ -97,22 +233,23 @@ const PlaylistSection: React.FC = () => {
             const result: PlaylistResponse = await response.json();
 
             if (result.success) {
-                setPlaylists(result.data);
+                dispatch({ type: 'FETCH_PLAYLISTS_SUCCESS', payload: result.data });
             } else {
                 throw new Error(result.message);
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An unknown error occurred");
-        } finally {
-            setLoading(false);
+            dispatch({
+                type: 'FETCH_PLAYLISTS_FAILURE',
+                payload: err instanceof Error ? err.message : "An unknown error occurred"
+            });
         }
     };
 
     // Fetch playlist details
     const fetchPlaylistDetails = async (playlistId: string) => {
         try {
-            setLoading(true);
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/playlist/p/${playlistId}`, {
+            dispatch({ type: 'FETCH_PLAYLISTS_REQUEST' });
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/playlist/p/${playlistId}`, {
                 credentials: 'include',
             });
 
@@ -123,22 +260,23 @@ const PlaylistSection: React.FC = () => {
             const result = await response.json();
 
             if (result.success && result.data.length > 0) {
-                setSelectedPlaylist(result.data[0]);
+                dispatch({ type: 'SET_SELECTED_PLAYLIST', payload: result.data[0] });
             } else {
                 throw new Error(result.message || "No playlist found");
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An unknown error occurred");
-        } finally {
-            setLoading(false);
+            dispatch({
+                type: 'FETCH_PLAYLISTS_FAILURE',
+                payload: err instanceof Error ? err.message : "An unknown error occurred"
+            });
         }
     };
 
     // Create new playlist
     const createPlaylist = async () => {
         try {
-            setIsSubmitting(true);
-            const response = await fetch('https://vidverse-backend.vercel.app/api/v1/playlist/create-playlist', {
+            dispatch({ type: 'SET_IS_SUBMITTING', payload: true });
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/playlist/create-playlist`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -158,16 +296,19 @@ const PlaylistSection: React.FC = () => {
             const result = await response.json();
 
             if (result.success) {
-                setFormData({ name: '', description: '' });
-                setShowCreateForm(false);
+                dispatch({ type: 'RESET_FORM_DATA' });
+                dispatch({ type: 'TOGGLE_CREATE_FORM', payload: false });
                 fetchPlaylists();
             } else {
                 throw new Error(result.message);
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An unknown error occurred");
+            dispatch({
+                type: 'FETCH_PLAYLISTS_FAILURE',
+                payload: err instanceof Error ? err.message : "An unknown error occurred"
+            });
         } finally {
-            setIsSubmitting(false);
+            dispatch({ type: 'SET_IS_SUBMITTING', payload: false });
         }
     };
 
@@ -176,8 +317,8 @@ const PlaylistSection: React.FC = () => {
         if (!selectedPlaylist) return;
 
         try {
-            setIsSubmitting(true);
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/playlist/p/${selectedPlaylist._id}`, {
+            dispatch({ type: 'SET_IS_SUBMITTING', payload: true });
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/playlist/p/${selectedPlaylist._id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -196,8 +337,8 @@ const PlaylistSection: React.FC = () => {
             const result = await response.json();
 
             if (result.success) {
-                setFormData({ name: '', description: '' });
-                setShowEditForm(false);
+                dispatch({ type: 'RESET_FORM_DATA' });
+                dispatch({ type: 'TOGGLE_EDIT_FORM', payload: false });
                 fetchPlaylists();
                 if (selectedPlaylist) {
                     fetchPlaylistDetails(selectedPlaylist._id);
@@ -206,17 +347,20 @@ const PlaylistSection: React.FC = () => {
                 throw new Error(result.message);
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An unknown error occurred");
+            dispatch({
+                type: 'FETCH_PLAYLISTS_FAILURE',
+                payload: err instanceof Error ? err.message : "An unknown error occurred"
+            });
         } finally {
-            setIsSubmitting(false);
+            dispatch({ type: 'SET_IS_SUBMITTING', payload: false });
         }
     };
 
     // Delete playlist
     const deletePlaylist = async (playlistId: string) => {
         try {
-            setIsSubmitting(true);
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/playlist/p/${playlistId}`, {
+            dispatch({ type: 'SET_IS_SUBMITTING', payload: true });
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/playlist/p/${playlistId}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });
@@ -228,23 +372,26 @@ const PlaylistSection: React.FC = () => {
             const result = await response.json();
 
             if (result.success) {
-                setSelectedPlaylist(null);
+                dispatch({ type: 'SET_SELECTED_PLAYLIST', payload: null });
                 fetchPlaylists();
             } else {
                 throw new Error(result.message);
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An unknown error occurred");
+            dispatch({
+                type: 'FETCH_PLAYLISTS_FAILURE',
+                payload: err instanceof Error ? err.message : "An unknown error occurred"
+            });
         } finally {
-            setIsSubmitting(false);
+            dispatch({ type: 'SET_IS_SUBMITTING', payload: false });
         }
     };
 
     // Remove video from playlist
     const removeVideoFromPlaylist = async (videoId: string, playlistId: string) => {
         try {
-            setIsSubmitting(true);
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/playlist/remove/${videoId}/${playlistId}`, {
+            dispatch({ type: 'SET_IS_SUBMITTING', payload: true });
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/playlist/remove/${videoId}/${playlistId}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });
@@ -252,47 +399,35 @@ const PlaylistSection: React.FC = () => {
             const result = await response.json();
 
             if (result.success) {
-                // Update the selected playlist by filtering out the removed video
-                if (selectedPlaylist) {
-                    setSelectedPlaylist({
-                        ...selectedPlaylist,
-                        video_details: selectedPlaylist.video_details.filter(video => video._id !== videoId),
-                        videoCount: selectedPlaylist.videoCount - 1
-                    });
-
-                    // Also update the playlists array to reflect the change
-                    setPlaylists(playlists.map(playlist =>
-                        playlist._id === playlistId
-                            ? {
-                                ...playlist,
-                                videoCount: playlist.videoCount - 1,
-                                // Update video_details if they exist in the playlist object
-                                video_details: playlist.video_details ?
-                                    playlist.video_details.filter(video => video._id !== videoId) :
-                                    []
-                            }
-                            : playlist
-                    ));
-                }
+                // Update state using reducer
+                dispatch({
+                    type: 'REMOVE_VIDEO_FROM_PLAYLIST',
+                    payload: { playlistId, videoId }
+                });
             } else {
                 throw new Error(result.message || "Failed to remove video from playlist");
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An unknown error occurred");
-            // Consider showing a toast notification here instead of setting the error state
+            dispatch({
+                type: 'FETCH_PLAYLISTS_FAILURE',
+                payload: err instanceof Error ? err.message : "An unknown error occurred"
+            });
             console.error("Error removing video:", err);
         } finally {
-            setIsSubmitting(false);
+            dispatch({ type: 'SET_IS_SUBMITTING', payload: false });
         }
     };
 
     // Handle edit button click
     const handleEditClick = (playlist: Playlist) => {
-        setFormData({
-            name: playlist.name,
-            description: playlist.description
+        dispatch({
+            type: 'UPDATE_FORM_DATA',
+            payload: {
+                name: playlist.name,
+                description: playlist.description
+            }
         });
-        setShowEditForm(true);
+        dispatch({ type: 'TOGGLE_EDIT_FORM', payload: true });
     };
 
     // Load playlists on component mount
@@ -336,7 +471,7 @@ const PlaylistSection: React.FC = () => {
                     {selectedPlaylist ? (
                         <div className="flex items-center gap-4">
                             <button
-                                onClick={() => setSelectedPlaylist(null)}
+                                onClick={() => dispatch({ type: 'SET_SELECTED_PLAYLIST', payload: null })}
                                 className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
@@ -352,7 +487,7 @@ const PlaylistSection: React.FC = () => {
 
                     {!selectedPlaylist && !showCreateForm && (
                         <Button
-                            onClick={() => setShowCreateForm(true)}
+                            onClick={() => dispatch({ type: 'TOGGLE_CREATE_FORM', payload: true })}
                             className="bg-red-600 hover:bg-red-700 text-white"
                         >
                             <Plus className="h-4 w-4 mr-2" />
@@ -367,7 +502,7 @@ const PlaylistSection: React.FC = () => {
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Create New Playlist</h3>
                             <button
-                                onClick={() => setShowCreateForm(false)}
+                                onClick={() => dispatch({ type: 'TOGGLE_CREATE_FORM', payload: false })}
                                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                             >
                                 <X className="h-5 w-5" />
@@ -382,7 +517,10 @@ const PlaylistSection: React.FC = () => {
                                 <Input
                                     id="name"
                                     value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    onChange={(e) => dispatch({
+                                        type: 'UPDATE_FORM_DATA',
+                                        payload: { ...formData, name: e.target.value }
+                                    })}
                                     placeholder="Enter playlist name"
                                     className="w-full"
                                 />
@@ -395,7 +533,10 @@ const PlaylistSection: React.FC = () => {
                                 <Textarea
                                     id="description"
                                     value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                    onChange={(e) => dispatch({
+                                        type: 'UPDATE_FORM_DATA',
+                                        payload: { ...formData, description: e.target.value }
+                                    })}
                                     placeholder="Add a description"
                                     rows={3}
                                     className="w-full"
@@ -406,7 +547,7 @@ const PlaylistSection: React.FC = () => {
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    onClick={() => setShowCreateForm(false)}
+                                    onClick={() => dispatch({ type: 'TOGGLE_CREATE_FORM', payload: false })}
                                     className="mr-2"
                                 >
                                     Cancel
@@ -436,7 +577,7 @@ const PlaylistSection: React.FC = () => {
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-medium text-gray-900 dark:text-white">Edit Playlist</h3>
                             <button
-                                onClick={() => setShowEditForm(false)}
+                                onClick={() => dispatch({ type: 'TOGGLE_EDIT_FORM', payload: false })}
                                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                             >
                                 <X className="h-5 w-5" />
@@ -451,7 +592,10 @@ const PlaylistSection: React.FC = () => {
                                 <Input
                                     id="edit-name"
                                     value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    onChange={(e) => dispatch({
+                                        type: 'UPDATE_FORM_DATA',
+                                        payload: { ...formData, name: e.target.value }
+                                    })}
                                     placeholder="Enter playlist name"
                                     className="w-full"
                                 />
@@ -464,7 +608,10 @@ const PlaylistSection: React.FC = () => {
                                 <Textarea
                                     id="edit-description"
                                     value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                    onChange={(e) => dispatch({
+                                        type: 'UPDATE_FORM_DATA',
+                                        payload: { ...formData, description: e.target.value }
+                                    })}
                                     placeholder="Add a description"
                                     rows={3}
                                     className="w-full"
@@ -475,7 +622,7 @@ const PlaylistSection: React.FC = () => {
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    onClick={() => setShowEditForm(false)}
+                                    onClick={() => dispatch({ type: 'TOGGLE_EDIT_FORM', payload: false })}
                                     className="mr-2"
                                 >
                                     Cancel
@@ -598,7 +745,7 @@ const PlaylistSection: React.FC = () => {
                                     You haven&apos;t created any playlists yet.
                                 </p>
                                 <Button
-                                    onClick={() => setShowCreateForm(true)}
+                                    onClick={() => dispatch({ type: 'TOGGLE_CREATE_FORM', payload: true })}
                                     className="mt-6 bg-red-600 hover:bg-red-700 text-white"
                                 >
                                     Create a playlist
@@ -711,5 +858,6 @@ const PlaylistSection: React.FC = () => {
         </div>
     );
 };
+
 
 export default PlaylistSection;

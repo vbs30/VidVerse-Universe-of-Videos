@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useReducer, useRef, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -44,12 +44,57 @@ interface ApiResponse<T> {
   data: T[];
 }
 
+// Define state type for useReducer
+interface SearchState {
+  searchQuery: string;
+  isSearchOpen: boolean;
+  suggestions: Suggestion[];
+  isLoading: boolean;
+  showSuggestions: boolean;
+}
+
+// Define action types
+type SearchAction =
+  | { type: 'SET_SEARCH_QUERY'; payload: string }
+  | { type: 'TOGGLE_SEARCH'; payload?: boolean }
+  | { type: 'SET_SUGGESTIONS'; payload: Suggestion[] }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SHOW_SUGGESTIONS'; payload: boolean }
+  | { type: 'CLEAR_SEARCH' };
+
+// Reducer function
+const searchReducer = (state: SearchState, action: SearchAction): SearchState => {
+  switch (action.type) {
+    case 'SET_SEARCH_QUERY':
+      return { ...state, searchQuery: action.payload };
+    case 'TOGGLE_SEARCH':
+      return { ...state, isSearchOpen: action.payload !== undefined ? action.payload : !state.isSearchOpen };
+    case 'SET_SUGGESTIONS':
+      return { ...state, suggestions: action.payload };
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
+    case 'SHOW_SUGGESTIONS':
+      return { ...state, showSuggestions: action.payload };
+    case 'CLEAR_SEARCH':
+      return { ...state, searchQuery: '', suggestions: [] };
+    default:
+      return state;
+  }
+};
+
 export function SearchComponent({ className, isDarkTheme, isMobile = false }: SearchComponentProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  // Initial state for the reducer
+  const initialState: SearchState = {
+    searchQuery: '',
+    isSearchOpen: false,
+    suggestions: [],
+    isLoading: false,
+    showSuggestions: false,
+  };
+
+  const [state, dispatch] = useReducer(searchReducer, initialState);
+  const { searchQuery, isSearchOpen, suggestions, isLoading, showSuggestions } = state;
+
   const searchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -57,18 +102,18 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (searchQuery.trim().length < 2) {
-        setSuggestions([]);
+        dispatch({ type: 'SET_SUGGESTIONS', payload: [] });
         return;
       }
 
-      setIsLoading(true);
+      dispatch({ type: 'SET_LOADING', payload: true });
       try {
         // Fetch videos
-        const videosResponse = await fetch('https://vidverse-backend.vercel.app/api/v1/dashboard/all-videos');
+        const videosResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/dashboard/all-videos`);
         const videosData = await videosResponse.json() as ApiResponse<VideoData>;
 
         // Fetch channels
-        const channelsResponse = await fetch('https://vidverse-backend.vercel.app/api/v1/subscription/all-channels');
+        const channelsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/subscription/all-channels`);
         const channelsData = await channelsResponse.json() as ApiResponse<ChannelData>;
 
         if (videosData.success && channelsData.success) {
@@ -100,12 +145,12 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
             }));
 
           // Combine and set suggestions
-          setSuggestions([...filteredVideos, ...filteredChannels]);
+          dispatch({ type: 'SET_SUGGESTIONS', payload: [...filteredVideos, ...filteredChannels] });
         }
       } catch (err) {
         console.error('Error fetching suggestions:', err);
       } finally {
-        setIsLoading(false);
+        dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
 
@@ -123,8 +168,8 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsSearchOpen(false);
-        setShowSuggestions(false);
+        dispatch({ type: 'TOGGLE_SEARCH', payload: false });
+        dispatch({ type: 'SHOW_SUGGESTIONS', payload: false });
       }
     };
 
@@ -136,8 +181,8 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setIsSearchOpen(false);
-      setShowSuggestions(false);
+      dispatch({ type: 'TOGGLE_SEARCH', payload: false });
+      dispatch({ type: 'SHOW_SUGGESTIONS', payload: false });
     }
   };
 
@@ -147,14 +192,13 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
     } else {
       router.push(`/channel/${suggestion.username}`);
     }
-    setSearchQuery('');
-    setShowSuggestions(false);
-    setIsSearchOpen(false);
+    dispatch({ type: 'SET_SEARCH_QUERY', payload: '' });
+    dispatch({ type: 'SHOW_SUGGESTIONS', payload: false });
+    dispatch({ type: 'TOGGLE_SEARCH', payload: false });
   };
 
   const clearSearch = () => {
-    setSearchQuery('');
-    setSuggestions([]);
+    dispatch({ type: 'CLEAR_SEARCH' });
   };
 
   // Render suggestions list
@@ -203,7 +247,7 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
     return (
       <div className="relative" ref={searchRef}>
         <button
-          onClick={() => setIsSearchOpen(!isSearchOpen)}
+          onClick={() => dispatch({ type: 'TOGGLE_SEARCH' })}
           className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
         >
           <Search size={20} />
@@ -221,10 +265,10 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
                   className="w-full p-2 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 text-black dark:text-white outline-none"
                   value={searchQuery}
                   onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setShowSuggestions(true);
+                    dispatch({ type: 'SET_SEARCH_QUERY', payload: e.target.value });
+                    dispatch({ type: 'SHOW_SUGGESTIONS', payload: true });
                   }}
-                  onFocus={() => setShowSuggestions(true)}
+                  onFocus={() => dispatch({ type: 'SHOW_SUGGESTIONS', payload: true })}
                   autoFocus
                 />
                 {searchQuery && (
@@ -260,10 +304,10 @@ export function SearchComponent({ className, isDarkTheme, isMobile = false }: Se
           className={`w-full p-2 outline-none ${isDarkTheme ? 'bg-neutral-900 placeholder-gray-500 text-white' : 'bg-gray-100 placeholder-gray-500 text-black'}`}
           value={searchQuery}
           onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setShowSuggestions(true);
+            dispatch({ type: 'SET_SEARCH_QUERY', payload: e.target.value });
+            dispatch({ type: 'SHOW_SUGGESTIONS', payload: true });
           }}
-          onFocus={() => setShowSuggestions(true)}
+          onFocus={() => dispatch({ type: 'SHOW_SUGGESTIONS', payload: true })}
         />
         {searchQuery && (
           <button

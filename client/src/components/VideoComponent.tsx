@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useReducer } from 'react'
 import { format } from 'date-fns'
 import { useAuth } from '@/contexts/AuthContext'
 import CommentSection from '@/components/CommentComponent';
@@ -29,7 +29,7 @@ import VideoGallery from "@/components/VideoGallery";
 import { toast } from "sonner";
 import Link from 'next/link'
 
-// Video interface
+// Interfaces
 interface Video {
     _id: string
     videoFile: string
@@ -44,7 +44,6 @@ interface Video {
     updatedAt: string
 }
 
-// Channel interface
 interface Channel {
     _id: string
     username: string
@@ -58,11 +57,6 @@ interface Channel {
     isSubscribed: boolean
 }
 
-interface VideoComponentProps {
-    videoid: string
-}
-
-// Playlist interface
 interface Playlist {
     _id: string
     name: string
@@ -71,48 +65,155 @@ interface Playlist {
     videoCount: number
 }
 
+interface VideoComponentProps {
+    videoid: string
+}
+
+// Define state interface
+interface State {
+    video: Video | null
+    channel: Channel | null
+    isLoading: boolean
+    isLiked: boolean
+    likesCount: number
+    error: string
+    subscribing: boolean
+    isSubscribed: boolean
+    recommendedVideos: Video[]
+    loadingRecommended: boolean
+    playlists: Playlist[]
+    loadingPlaylists: boolean
+    savingToPlaylist: boolean
+    isPlaylistDialogOpen: boolean
+}
+
+// Define action types
+type Action =
+    | { type: 'SET_LOADING', payload: boolean }
+    | { type: 'SET_ERROR', payload: string }
+    | { type: 'SET_VIDEO', payload: Video }
+    | { type: 'SET_CHANNEL', payload: Channel }
+    | { type: 'SET_LIKES_COUNT', payload: number }
+    | { type: 'SET_IS_LIKED', payload: boolean }
+    | { type: 'SET_SUBSCRIBING', payload: boolean }
+    | { type: 'SET_IS_SUBSCRIBED', payload: boolean }
+    | { type: 'UPDATE_SUBSCRIBER_COUNT', payload: number }
+    | { type: 'SET_RECOMMENDED_VIDEOS', payload: Video[] }
+    | { type: 'SET_LOADING_RECOMMENDED', payload: boolean }
+    | { type: 'SET_PLAYLISTS', payload: Playlist[] }
+    | { type: 'SET_LOADING_PLAYLISTS', payload: boolean }
+    | { type: 'SET_SAVING_TO_PLAYLIST', payload: boolean }
+    | { type: 'SET_PLAYLIST_DIALOG_OPEN', payload: boolean }
+
+// Initial state
+const initialState: State = {
+    video: null,
+    channel: null,
+    isLoading: true,
+    isLiked: false,
+    likesCount: 0,
+    error: '',
+    subscribing: false,
+    isSubscribed: false,
+    recommendedVideos: [],
+    loadingRecommended: false,
+    playlists: [],
+    loadingPlaylists: false,
+    savingToPlaylist: false,
+    isPlaylistDialogOpen: false
+}
+
+// Reducer function
+function reducer(state: State, action: Action): State {
+    switch (action.type) {
+        case 'SET_LOADING':
+            return { ...state, isLoading: action.payload }
+        case 'SET_ERROR':
+            return { ...state, error: action.payload, isLoading: false }
+        case 'SET_VIDEO':
+            return { ...state, video: action.payload }
+        case 'SET_CHANNEL':
+            return { ...state, channel: action.payload }
+        case 'SET_LIKES_COUNT':
+            return { ...state, likesCount: action.payload }
+        case 'SET_IS_LIKED':
+            return { ...state, isLiked: action.payload }
+        case 'SET_SUBSCRIBING':
+            return { ...state, subscribing: action.payload }
+        case 'SET_IS_SUBSCRIBED':
+            return { ...state, isSubscribed: action.payload }
+        case 'UPDATE_SUBSCRIBER_COUNT':
+            if (!state.channel) return state
+            return {
+                ...state,
+                channel: {
+                    ...state.channel,
+                    subscribersCount: action.payload
+                }
+            }
+        case 'SET_RECOMMENDED_VIDEOS':
+            return { ...state, recommendedVideos: action.payload }
+        case 'SET_LOADING_RECOMMENDED':
+            return { ...state, loadingRecommended: action.payload }
+        case 'SET_PLAYLISTS':
+            return { ...state, playlists: action.payload }
+        case 'SET_LOADING_PLAYLISTS':
+            return { ...state, loadingPlaylists: action.payload }
+        case 'SET_SAVING_TO_PLAYLIST':
+            return { ...state, savingToPlaylist: action.payload }
+        case 'SET_PLAYLIST_DIALOG_OPEN':
+            return { ...state, isPlaylistDialogOpen: action.payload }
+        default:
+            return state
+    }
+}
+
 export default function VideoComponent({ videoid }: VideoComponentProps) {
     const { isAuthenticated, user } = useAuth()
-    const [video, setVideo] = useState<Video | null>(null)
-    const [channel, setChannel] = useState<Channel | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [isLiked, setIsLiked] = useState(false)
-    const [likesCount, setLikesCount] = useState(0)
-    const [error, setError] = useState('')
+    const [state, dispatch] = useReducer(reducer, initialState)
     const videoRef = useRef<HTMLVideoElement>(null)
-    const [subscribing, setSubscribing] = useState(false)
-    const [isSubscribed, setIsSubscribed] = useState(false)
-    const [recommendedVideos, setRecommendedVideos] = useState<Video[]>([])
-    const [loadingRecommended, setLoadingRecommended] = useState(false)
-    const [playlists, setPlaylists] = useState<Playlist[]>([])
-    const [loadingPlaylists, setLoadingPlaylists] = useState(false)
-    const [savingToPlaylist, setSavingToPlaylist] = useState(false)
-    const [isPlaylistDialogOpen, setIsPlaylistDialogOpen] = useState(false)
+
+    const {
+        video,
+        channel,
+        isLoading,
+        isLiked,
+        likesCount,
+        error,
+        subscribing,
+        isSubscribed,
+        recommendedVideos,
+        loadingRecommended,
+        playlists,
+        loadingPlaylists,
+        savingToPlaylist,
+        isPlaylistDialogOpen
+    } = state
 
     // Fetch video data
     useEffect(() => {
         const fetchVideoData = async () => {
             try {
-                setIsLoading(true)
-                const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/v/${videoid}`)
+                dispatch({ type: 'SET_LOADING', payload: true })
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/videos/v/${videoid}`)
                 const data = await response.json()
 
                 if (data.success) {
-                    setVideo(data.data)
+                    dispatch({ type: 'SET_VIDEO', payload: data.data })
 
-                    await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/view/${videoid}`, {
+                    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/videos/view/${videoid}`, {
                         method: 'GET',
                         credentials: 'include',
                     });
 
                     // Fetch channel data once we have the video owner's username
                     const channelResponse = await fetch(
-                        `https://vidverse-backend.vercel.app/api/v1/users/c/${encodeURIComponent(data.data.ownerName)}`
+                        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/c/${encodeURIComponent(data.data.ownerName)}`
                     )
                     const channelData = await channelResponse.json()
 
                     if (channelData.success) {
-                        setChannel(channelData.data)
+                        dispatch({ type: 'SET_CHANNEL', payload: channelData.data })
 
                         // Check subscription status after getting channel data
                         if (channelData.data._id && isAuthenticated) {
@@ -131,13 +232,13 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
                         await checkUserLikeStatus()
                     }
                 } else {
-                    setError('Failed to load video')
+                    dispatch({ type: 'SET_ERROR', payload: 'Failed to load video' })
                 }
             } catch (err) {
-                setError('An error occurred while fetching data')
+                dispatch({ type: 'SET_ERROR', payload: 'An error occurred while fetching data' })
                 console.error(err)
             } finally {
-                setIsLoading(false)
+                dispatch({ type: 'SET_LOADING', payload: false })
             }
         }
 
@@ -149,18 +250,18 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
     // Check subscription status
     const checkSubscriptionStatus = async (channelId: string) => {
         if (!isAuthenticated || !user) {
-            setIsSubscribed(false)
+            dispatch({ type: 'SET_IS_SUBSCRIBED', payload: false })
             return
         }
 
         try {
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/subscription/check/${channelId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/subscription/check/${channelId}`, {
                 credentials: 'include',
             })
 
             if (response.ok) {
                 const result = await response.json()
-                setIsSubscribed(result.data.isSubscribed)
+                dispatch({ type: 'SET_IS_SUBSCRIBED', payload: result.data.isSubscribed })
             }
         } catch (err) {
             console.error("Error checking subscription status:", err)
@@ -170,8 +271,8 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
     // Fetch recommended videos from the same channel
     const fetchRecommendedVideos = async (channelUsername: string, currentVideoId: string) => {
         try {
-            setLoadingRecommended(true)
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/cv/${encodeURIComponent(channelUsername)}`)
+            dispatch({ type: 'SET_LOADING_RECOMMENDED', payload: true })
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/videos/cv/${encodeURIComponent(channelUsername)}`)
 
             if (response.ok) {
                 const result = await response.json()
@@ -182,20 +283,20 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
                         .filter((v: Video) => v._id !== currentVideoId)
                         .slice(0, 10)
 
-                    setRecommendedVideos(filteredVideos)
+                    dispatch({ type: 'SET_RECOMMENDED_VIDEOS', payload: filteredVideos })
                 } else {
                     console.warn("Videos fetch returned success: false", result.message)
-                    setRecommendedVideos([])
+                    dispatch({ type: 'SET_RECOMMENDED_VIDEOS', payload: [] })
                 }
             } else {
                 console.error("Videos fetch error:", response.status)
-                setRecommendedVideos([])
+                dispatch({ type: 'SET_RECOMMENDED_VIDEOS', payload: [] })
             }
         } catch (err) {
             console.error("Error fetching recommended videos:", err)
-            setRecommendedVideos([])
+            dispatch({ type: 'SET_RECOMMENDED_VIDEOS', payload: [] })
         } finally {
-            setLoadingRecommended(false)
+            dispatch({ type: 'SET_LOADING_RECOMMENDED', payload: false })
         }
     }
 
@@ -203,12 +304,12 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
     const fetchLikesCount = async () => {
         try {
             const likesCountResponse = await fetch(
-                `https://vidverse-backend.vercel.app/api/v1/likes/count/${videoid}`
+                `${process.env.NEXT_PUBLIC_API_URL}/api/v1/likes/count/${videoid}`
             )
             const likesCountData = await likesCountResponse.json()
 
             if (likesCountData.success) {
-                setLikesCount(likesCountData.data.count)
+                dispatch({ type: 'SET_LIKES_COUNT', payload: likesCountData.data.count })
             }
         } catch (err) {
             console.error('Error fetching likes count:', err)
@@ -219,7 +320,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
     const checkUserLikeStatus = async () => {
         try {
             const likesResponse = await fetch(
-                `https://vidverse-backend.vercel.app/api/v1/likes/check-likes/${videoid}`,
+                `${process.env.NEXT_PUBLIC_API_URL}/api/v1/likes/check-likes/${videoid}`,
                 {
                     credentials: 'include',
                 }
@@ -227,7 +328,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
             const likesData = await likesResponse.json()
 
             if (likesData.success) {
-                setIsLiked(likesData.data.isLiked)
+                dispatch({ type: 'SET_IS_LIKED', payload: likesData.data.isLiked })
             }
         } catch (err) {
             console.error('Error checking like status:', err)
@@ -242,15 +343,15 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
         }
 
         try {
-            setLoadingPlaylists(true)
-            const response = await fetch("https://vidverse-backend.vercel.app/api/v1/playlist/get-user-playlist", {
+            dispatch({ type: 'SET_LOADING_PLAYLISTS', payload: true })
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/playlist/get-user-playlist`, {
                 credentials: 'include',
             })
 
             const result = await response.json()
 
             if (result.success) {
-                setPlaylists(result.data)
+                dispatch({ type: 'SET_PLAYLISTS', payload: result.data })
             } else {
                 toast.error(result.message || "Failed to load playlists")
             }
@@ -258,7 +359,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
             console.error("Error fetching playlists:", err)
             toast.error("Error loading playlists. Please try again.")
         } finally {
-            setLoadingPlaylists(false)
+            dispatch({ type: 'SET_LOADING_PLAYLISTS', payload: false })
         }
     }
 
@@ -270,8 +371,8 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
         }
 
         try {
-            setSavingToPlaylist(true)
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/playlist/add/${video._id}/${playlistId}`, {
+            dispatch({ type: 'SET_SAVING_TO_PLAYLIST', payload: true })
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/playlist/add/${video._id}/${playlistId}`, {
                 method: 'PATCH',
                 credentials: 'include',
             })
@@ -280,7 +381,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
 
             if (result.success) {
                 toast.success(result.message || "Video added to playlist")
-                setIsPlaylistDialogOpen(false)
+                dispatch({ type: 'SET_PLAYLIST_DIALOG_OPEN', payload: false })
             } else {
                 toast.error(result.message || "Failed to add video to playlist")
             }
@@ -288,7 +389,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
             console.error("Error adding to playlist:", err)
             toast.error("Error saving video. Please try again.")
         } finally {
-            setSavingToPlaylist(false)
+            dispatch({ type: 'SET_SAVING_TO_PLAYLIST', payload: false })
         }
     }
 
@@ -301,7 +402,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
 
         try {
             const response = await fetch(
-                `https://vidverse-backend.vercel.app/api/v1/likes/toggle/v/${videoid}`,
+                `${process.env.NEXT_PUBLIC_API_URL}/api/v1/likes/toggle/v/${videoid}`,
                 {
                     method: 'POST',
                     credentials: 'include',
@@ -322,7 +423,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
         }
     }
 
-    // Handle subscription toggle (using Channel page logic)
+    // Handle subscription toggle
     const handleSubscriptionToggle = async () => {
         if (!channel) return
 
@@ -333,9 +434,9 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
         }
 
         try {
-            setSubscribing(true)
+            dispatch({ type: 'SET_SUBSCRIBING', payload: true })
 
-            const response = await fetch(`https://vidverse-backend.vercel.app/api/v1/subscription/c/${channel._id}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/subscription/c/${channel._id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -348,23 +449,18 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
             if (result.success) {
                 // Toggle subscription status
                 const newSubscriptionStatus = !isSubscribed
-                setIsSubscribed(newSubscriptionStatus)
+                dispatch({ type: 'SET_IS_SUBSCRIBED', payload: newSubscriptionStatus })
 
                 // Update subscriber count
-                setChannel(prev => {
-                    if (!prev) return prev
+                if (channel) {
+                    const newSubscriberCount = newSubscriptionStatus
+                        ? channel.subscribersCount + 1
+                        : channel.subscribersCount - 1
 
-                    const subscribersCount = newSubscriptionStatus
-                        ? prev.subscribersCount + 1
-                        : prev.subscribersCount - 1
+                    dispatch({ type: 'UPDATE_SUBSCRIBER_COUNT', payload: newSubscriberCount })
 
                     toast.success(newSubscriptionStatus ? "Successfully subscribed" : "Successfully unsubscribed")
-
-                    return {
-                        ...prev,
-                        subscribersCount: subscribersCount
-                    }
-                })
+                }
             } else {
                 toast.error(result.message || "Failed to update subscription")
             }
@@ -372,7 +468,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
             toast.error("Error updating subscription. Please try again.")
             console.error("Subscription error:", err)
         } finally {
-            setSubscribing(false)
+            dispatch({ type: 'SET_SUBSCRIBING', payload: false })
         }
     }
 
@@ -426,6 +522,17 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
         return `${Math.floor(diffInDays / 365)} years ago`
     }
 
+    // Handle playlist dialog open
+    const handlePlaylistDialogOpen = () => {
+        if (!isAuthenticated) {
+            toast.error("Please log in to save videos")
+            return
+        }
+        fetchUserPlaylists()
+        dispatch({ type: 'SET_PLAYLIST_DIALOG_OPEN', payload: true })
+    }
+
+    // Rendering logic - this is the continued code from paste-2.txt
     if (isLoading) {
         return (
             <div className="w-full flex flex-col lg:flex-row overflow-auto h-screen">
@@ -592,14 +699,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
                             <Button
                                 variant="outline"
                                 className="flex items-center gap-2"
-                                onClick={() => {
-                                    if (!isAuthenticated) {
-                                        toast.error("Please log in to save videos")
-                                        return
-                                    }
-                                    fetchUserPlaylists()
-                                    setIsPlaylistDialogOpen(true)
-                                }}
+                                onClick={handlePlaylistDialogOpen}
                                 disabled={!isAuthenticated}
                                 size="sm"
                             >
@@ -674,7 +774,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
                                             key={video._id}
                                             title={video.title}
                                             channelName={video.ownerName}
-                                            views={`${formatViews(Number(video?.views))} views`}
+                                            views={`${formatViews(Number(video.views))} views`}
                                             timeAgo={getTimeAgo(video.createdAt)}
                                             duration={video.duration}
                                             thumbnailUrl={video.thumbnail}
@@ -713,7 +813,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
                                         key={video._id}
                                         title={video.title}
                                         channelName={video.ownerName}
-                                        views={`${video.views.toLocaleString()} views`}
+                                        views={`${formatViews(Number(video.views))} views`}
                                         timeAgo={getTimeAgo(video.createdAt)}
                                         duration={video.duration}
                                         thumbnailUrl={video.thumbnail}
@@ -735,7 +835,7 @@ export default function VideoComponent({ videoid }: VideoComponentProps) {
             </div>
 
             {/* Playlist Dialog */}
-            <AlertDialog open={isPlaylistDialogOpen} onOpenChange={setIsPlaylistDialogOpen}>
+            <AlertDialog open={isPlaylistDialogOpen} onOpenChange={(open) => dispatch({ type: 'SET_PLAYLIST_DIALOG_OPEN', payload: open })}>
                 <AlertDialogContent className="sm:max-w-md max-w-[80vw]">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="text-xl font-bold">Save to Playlist</AlertDialogTitle>

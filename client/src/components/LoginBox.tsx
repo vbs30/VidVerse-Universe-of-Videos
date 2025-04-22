@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from "sonner"
@@ -18,7 +18,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
 import { LoginSchema, LoginFormInputs } from "@/schemas/login.schemas"
-import { useAuth } from '@/contexts/AuthContext' // Import the useAuth hook
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation' // Import router for redirects/refreshes
 
 export function LoginBox({
     className,
@@ -26,9 +27,19 @@ export function LoginBox({
 }: React.ComponentPropsWithoutRef<typeof AlertDialogTrigger>) {
     const [isOpen, setIsOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const router = useRouter()
 
     // Use the AuthContext
-    const { login } = useAuth()
+    const { login, isAuthenticated } = useAuth()
+
+    // If user becomes authenticated, close the dialog
+    useEffect(() => {
+        if (isAuthenticated && isOpen) {
+            setIsOpen(false)
+            // Optional: refresh the page to show authenticated content
+            router.refresh()
+        }
+    }, [isAuthenticated, isOpen, router])
 
     const form = useForm<LoginFormInputs>({
         resolver: zodResolver(LoginSchema),
@@ -41,43 +52,52 @@ export function LoginBox({
     const onSubmitLogin = async (data: LoginFormInputs) => {
         setIsSubmitting(true)
 
-        const response = await fetch("https://vidverse-backend.vercel.app/api/v1/users/login", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-                username: data.username,
-                email: data.username,
-                password: data.password
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    username: data.username,
+                    email: data.username,
+                    password: data.password
+                })
             })
-        })
 
-        // Parse response before checking status
-        const responseBody = await response.text();
+            // Parse response before checking status
+            const responseBody = await response.text()
 
-        // Check response status explicitly
-        if (response.ok) {
-            const jsonData = JSON.parse(responseBody);
-            toast.success(jsonData.message || 'Login Successful')
+            // Check response status explicitly
+            if (response.ok) {
+                const jsonData = JSON.parse(responseBody)
+                toast.success(jsonData.message || 'Login Successful')
 
-            // Fetch current user data after successful login
-            const userResponse = await fetch('https://vidverse-backend.vercel.app/api/v1/users/get-current-user', {
-                credentials: 'include'
-            });
-            const userData = await userResponse.json();
+                // Fetch current user data after successful login
+                const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/users/get-current-user`, {
+                    credentials: 'include'
+                })
+                const userData = await userResponse.json()
 
-            if (userData.success) {
-                // Use the login function from AuthContext
-                login(userData.data);
+                if (userData.success) {
+                    // Use the login function from AuthContext
+                    await login(userData.data)
+
+                    // Reset form 
+                    form.reset()
+
+                    // The useEffect will close the dialog and refresh the page
+                }
+            } else {
+                const errorData = JSON.parse(responseBody)
+                console.log(errorData)
+                toast.error(errorData.message || 'Login Failed')
             }
-
-            setIsOpen(false)
-        } else {
-            const errorData = JSON.parse(responseBody);
-            console.log(errorData)
-            toast.error(errorData.message || 'Login Failed')
+        } catch (error) {
+            console.error('Login error:', error)
+            toast.error('An error occurred during login')
+        } finally {
             setIsSubmitting(false)
         }
     }
@@ -88,6 +108,10 @@ export function LoginBox({
             onOpenChange={(open) => {
                 if (!isSubmitting) {
                     setIsOpen(open)
+                    if (!open) {
+                        // Reset form when dialog is closed
+                        form.reset()
+                    }
                 }
             }}
         >

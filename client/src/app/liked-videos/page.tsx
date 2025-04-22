@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useReducer } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ThumbsUp } from "lucide-react";
@@ -44,12 +44,49 @@ interface VideoResponse {
     success: boolean;
 }
 
+// Define the state type
+interface State {
+    loading: boolean;
+    error: string | null;
+    likedVideos: Video[];
+    authChecked: boolean;
+}
+
+// Define action types
+type Action =
+    | { type: 'SET_AUTH_CHECKED' }
+    | { type: 'FETCH_START' }
+    | { type: 'FETCH_SUCCESS', payload: Video[] }
+    | { type: 'FETCH_ERROR', payload: string };
+
+// Define the reducer function
+const reducer = (state: State, action: Action): State => {
+    switch (action.type) {
+        case 'SET_AUTH_CHECKED':
+            return { ...state, authChecked: true };
+        case 'FETCH_START':
+            return { ...state, loading: true, error: null };
+        case 'FETCH_SUCCESS':
+            return { ...state, loading: false, likedVideos: action.payload, error: null };
+        case 'FETCH_ERROR':
+            return { ...state, loading: false, error: action.payload };
+        default:
+            return state;
+    }
+};
+
 const LikedVideosPage: React.FC = () => {
     const { isAuthenticated, user } = useAuth();
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [likedVideos, setLikedVideos] = useState<Video[]>([]);
-    const [authChecked, setAuthChecked] = useState(false);
+
+    // Initialize state with useReducer
+    const [state, dispatch] = useReducer(reducer, {
+        loading: true,
+        error: null,
+        likedVideos: [],
+        authChecked: false
+    });
+
+    const { loading, error, likedVideos, authChecked } = state;
 
     // Format duration
     const formatDuration = (duration: string): string => {
@@ -99,9 +136,8 @@ const LikedVideosPage: React.FC = () => {
 
     useEffect(() => {
         // Set authChecked to true once user and isAuthenticated have been determined
-        // This helps handle the initial loading state correctly
         if (user !== undefined || isAuthenticated !== undefined) {
-            setAuthChecked(true);
+            dispatch({ type: 'SET_AUTH_CHECKED' });
         }
     }, [user, isAuthenticated]);
 
@@ -113,15 +149,15 @@ const LikedVideosPage: React.FC = () => {
 
         const fetchLikedVideos = async () => {
             if (!isAuthenticated) {
-                setLoading(false);
+                dispatch({ type: 'FETCH_SUCCESS', payload: [] });
                 return;
             }
 
             try {
-                setLoading(true);
+                dispatch({ type: 'FETCH_START' });
 
                 // First, fetch all liked video IDs
-                const likedResponse = await fetch('https://vidverse-backend.vercel.app/api/v1/likes/liked-videos', {
+                const likedResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/likes/liked-videos`, {
                     credentials: 'include',
                 });
 
@@ -138,10 +174,9 @@ const LikedVideosPage: React.FC = () => {
                 // Then fetch details for each video
                 const videoPromises = likedData.data.map(async (liked) => {
                     const videoId = liked.video;
-                    const videoResponse = await fetch(`https://vidverse-backend.vercel.app/api/v1/videos/v/${videoId}`, {
+                    const videoResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/videos/v/${videoId}`, {
                         credentials: 'include',
                     });
-                    console.log(videoResponse)
 
                     if (!videoResponse.ok) {
                         console.error(`Failed to fetch video ${videoId}`);
@@ -155,13 +190,12 @@ const LikedVideosPage: React.FC = () => {
                 const videoResults = await Promise.all(videoPromises);
                 const validVideos = videoResults.filter((video): video is Video => video !== null);
 
-                setLikedVideos(validVideos);
+                dispatch({ type: 'FETCH_SUCCESS', payload: validVideos });
             } catch (err) {
                 console.error("Error fetching liked videos:", err);
-                setError(err instanceof Error ? err.message : "An unknown error occurred");
+                const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+                dispatch({ type: 'FETCH_ERROR', payload: errorMessage });
                 toast.error("Failed to load liked videos");
-            } finally {
-                setLoading(false);
             }
         };
 
