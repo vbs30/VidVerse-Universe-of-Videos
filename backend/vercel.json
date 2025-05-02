@@ -22,6 +22,7 @@
             },
             "continue": true
         },
+        
         {
             "src": "/(.*)",
             "dest": "src/index.js",
