@@ -51,7 +51,7 @@ const initialState: ChannelState = {
   loading: true,
   error: null,
   channelData: null,
-  videos: [],
+  videos: [], // Initialize as an empty array
   totalVideos: 0,
   activeTab: "videos"
 };
@@ -188,6 +188,12 @@ const MyChannelPage: React.FC = () => {
     if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
     if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
     return views.toString();
+  };
+
+  // Calculate total views safely with null check
+  const calculateTotalViews = () => {
+    if (!videos || videos.length === 0) return 0;
+    return videos.reduce((sum, video) => sum + video.views, 0);
   };
 
   if (loading) return (
@@ -402,7 +408,7 @@ const MyChannelPage: React.FC = () => {
                       You haven&apos;t uploaded any videos yet.
                     </p>
                     <button
-                      onClick={() => window.location.href = '/upload'} // Adjust to your upload route
+                      onClick={() => window.location.href = '/create-video'} // Adjust to your upload route
                       className="mt-6 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors duration-200"
                     >
                       Upload a video
@@ -473,7 +479,7 @@ const MyChannelPage: React.FC = () => {
                           </svg>
                         </div>
                         <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                          {videos.reduce((sum, video) => sum + video.views, 0).toLocaleString()}
+                          {calculateTotalViews().toLocaleString()}
                         </p>
                       </div>
                     </div>
