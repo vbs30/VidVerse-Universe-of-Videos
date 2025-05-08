@@ -484,16 +484,6 @@ const PlaylistSection: React.FC = () => {
                     ) : (
                         <h2 className="text-xl font-bold text-gray-900 dark:text-white">Your Playlists</h2>
                     )}
-
-                    {!selectedPlaylist && !showCreateForm && (
-                        <Button
-                            onClick={() => dispatch({ type: 'TOGGLE_CREATE_FORM', payload: true })}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                        >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create Playlist
-                        </Button>
-                    )}
                 </div>
 
                 {/* Create Playlist Form */}
