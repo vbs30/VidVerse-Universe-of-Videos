@@ -59,6 +59,12 @@ VidVerse is not just another video platform; it is built with a focus on:
 
 ---
 
+## Video demo
+
+[![Video Title]([https://i.vimeocdn.com/video/THUMBNAIL_ID_640.jpg](https://github-production-user-asset-6210df.s3.amazonaws.com/95699405/444114015-b88e70f7-0807-42b2-9fab-6524c57b0177.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250515%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250515T123551Z&X-Amz-Expires=300&X-Amz-Signature=0158f9a2dbc7cc4df9169bdc22037721002794e9d1deae961f6ab382399947d4&X-Amz-SignedHeaders=host))](https://drive.google.com/file/d/1CaL17z4ceOg_tLAxxk881ssI18ZGQgx8/view?usp=drive_link)
+
+---
+
 ## 🖥️ Installation & Setup  
 
 ### Prerequisites  
