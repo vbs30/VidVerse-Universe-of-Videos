@@ -1,5 +1,4 @@
-#  VidVerse
-## The Universe of Videos
+#  VidVerse - The Universe of Videos
 
 VidVerse is a cutting-edge video platform designed to revolutionize the way you experience video content. With a robust architecture, seamless performance, and state-of-the-art technologies, VidVerse offers a fast, reliable, and scalable solution for video streaming and management.
 
@@ -56,6 +55,14 @@ VidVerse is not just another video platform; it is built with a focus on:
 - **Reliability**: Robust architecture ensures consistent and error-free operation.
 - **Scalability**: Designed to grow with your needs, handling increasing traffic and data effortlessly.
 - **User Experience**: Thoughtfully crafted features and seamless authentication for a superior user journey.
+
+---
+
+## 🎥 Video demo 
+
+Click the thumbnail to watch the video.
+
+[![Video on Google Drive](https://github.com/user-attachments/assets/7ccf274a-7bb6-410b-84c8-d699cf5547cb)](https://drive.google.com/file/d/1CaL17z4ceOg_tLAxxk881ssI18ZGQgx8/view?usp=drive_link)
 
 ---
 
