@@ -2,8 +2,10 @@ import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js"
 import { verifyJWT, optionalJWT } from "../middlewares/auth.middleware.js";
 import { createVideo, deleteVideo, getVideoById, updateVideoDetails, getVideoByUserId, getAllVideos, getVideoByUsername, updateView } from "../controllers/video.controllers.js";
+import { gzipResponseMiddleware } from "../middlewares/gzip.middleware.js";
 
 const router = Router()
+router.use(gzipResponseMiddleware)
 
 router.route("/create-video").post(verifyJWT, upload.fields([
     {

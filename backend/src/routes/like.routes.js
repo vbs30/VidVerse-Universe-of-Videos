@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { getLikedVideos, getLikedComments, getLikedTweets, toggleVideoLike, toggleCommentLike, toggleTweetLike, checkLikes, countofVideoLikes, countofCommentLikes, checkLikesforComment } from "../controllers/like.controllers.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js"
+import { gzipResponseMiddleware } from "../middlewares/gzip.middleware.js";
 
 const router = Router();
+router.use(gzipResponseMiddleware)
 
 router.route("/toggle/v/:videoId").post(verifyJWT, toggleVideoLike);
 router.route("/check-likes/:videoId").get(verifyJWT, checkLikes);

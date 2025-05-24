@@ -2,8 +2,10 @@ import { Router } from "express";
 import { loginUser, logoutUser, registerUser, refreshAccessToken, changingPassword, getCurrentUser, updateUserAvatar, updateUserCoverImage, getUserChannelProfile, getWatchHistory, getUserById } from "../controllers/user.controllers.js";
 import { upload } from "../middlewares/multer.middleware.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { gzipResponseMiddleware } from "../middlewares/gzip.middleware.js";
 
 const router = Router();
+router.use(gzipResponseMiddleware)
 
 
 router.route("/register").post(upload.fields([

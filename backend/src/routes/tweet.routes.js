@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { createTweets, deleteTweet, getUserTweets, updateTweet, getAllTweets } from "../controllers/tweet.controllers.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { gzipResponseMiddleware } from "../middlewares/gzip.middleware.js";
 
 const router = Router()
+router.use(gzipResponseMiddleware)
 router.use(verifyJWT)
 
 router.route("/").get(getAllTweets)
